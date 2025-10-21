@@ -7,10 +7,10 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "page-id": "2",
+  "websiteId": "2",
   "content": 
     {
       "title": "Help",
-      "content": "There's someone in the walls"
+      "text": "There's someone in the walls"
     }
 }

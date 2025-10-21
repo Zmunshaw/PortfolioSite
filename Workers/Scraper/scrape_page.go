@@ -7,9 +7,9 @@ import (
 )
 
 type PageData struct {
-	WebsiteID int
-	Title     string
-	Content   string
+	WebsiteID int    `json:"websiteId"`
+	Title     string `json:"title"`
+	Text      string `json:"text"`
 }
 
 func GetPage(c *colly.Collector, urlToScrape string, siteID int) (error, PageData) {
@@ -24,7 +24,7 @@ func GetPage(c *colly.Collector, urlToScrape string, siteID int) (error, PageDat
 
 	c.OnHTML("article, div#content, main", func(e *colly.HTMLElement) {
 		fmt.Println("Content:\n", e.Text)
-		pageData.Content = e.Text
+		pageData.Text = e.Text
 	})
 
 	c.OnError(func(r *colly.Response, err error) {

@@ -39,7 +39,7 @@ public class IndexController : ControllerBase
     }
 
     [HttpPost("submit-page")]
-    public ActionResult<Page> Page([FromQuery] Page page)
+    public ActionResult<Page> Page([FromBody] Page page)
     {
         _logger.LogDebug($"Recieved new page: {page.Content.Title}, ID: {page.PageID}");
         
