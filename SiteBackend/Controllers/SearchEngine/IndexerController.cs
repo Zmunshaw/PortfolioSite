@@ -35,6 +35,13 @@ public class IndexController : ControllerBase
 
         _sitemapService.AddSitemap(newSitemap);
         // Return a 201 Created status code with the location of the newly created resource
-        return Created("", newSitemap);
+        return Created("Get fukt", newSitemap);
+    }
+
+    public ActionResult<Page> Page([FromQuery] Page page)
+    {
+        _logger.LogDebug($"Recieved new page: {page.Content.Title}, ID: {page.PageID}");
+        
+        return Created("Get fukt", page);
     }
 }
