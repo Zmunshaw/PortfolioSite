@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using SiteBackend.Database;
+using SiteBackend.Data.SeedData;
 using SiteBackend.Middleware.AIClient;
 using SiteBackend.Repositories.SearchEngine;
 using SiteBackend.Services;
@@ -13,6 +14,8 @@ AddDatabases(builder);
 AddRepositories(builder);
 AddServices(builder);
 AddControllers(builder);
+AddCORS(builder);
+BuildDev(builder);
 builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
@@ -50,14 +53,18 @@ void AddRepositories(WebApplicationBuilder bldr)
 
 void AddControllers(WebApplicationBuilder bldr)
 {
-    builder.Services.AddControllers()
+    bldr.Services.AddControllers()
         .AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
-    builder.Services.AddCors(options =>
+}
+
+void AddCORS(WebApplicationBuilder bldr)
+{
+    bldr.Services.AddCors(options =>
     {
         options.AddPolicy("AllowAll", policy =>
         {
@@ -66,4 +73,25 @@ void AddControllers(WebApplicationBuilder bldr)
                 .AllowAnyHeader();
         });
     });
+}
+
+void BuildDev(WebApplicationBuilder bldr)
+{
+    Console.WriteLine($"Environment: {bldr.Environment.EnvironmentName} Initializing...");
+    
+    if (bldr.Environment.IsDevelopment())
+    {
+        using var scope = bldr.Services.BuildServiceProvider().CreateScope();
+        var dbCtx = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SearchEngineCtx>>().CreateDbContext();
+        
+        LoadSeedData.SeedDatabase(dbCtx);
+    }
+    else
+    {
+        for(int i = 0; i < 1000; i++)
+            Console.WriteLine("You should probably fill in the logic production");
+        throw new Exception("You should probably fill in the logic production environment.....");
+    }
+    
+    Console.WriteLine($"Environment: {bldr.Environment.EnvironmentName} Initialized");
 }
