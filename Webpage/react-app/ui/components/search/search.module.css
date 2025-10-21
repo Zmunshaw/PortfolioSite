@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.searchContainer {
+    width: 100%;
+    max-width: 800px; /* similar to Google's centered layout */
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.li {
+    margin-bottom: 30px; /* space between results */
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0; /* subtle separator like Google */
+}
+
+.result-title {
+    font-size: 18px;
+    color: #1a0dab; /* Google's link blue */
+    text-decoration: none;
+}
+
+.result-title:hover {
+    text-decoration: underline;
+}
+
+.result-url {
+    color: #006621; /* Google green */
+    font-size: 14px;
+}
+
+.result-snippet {
+    font-size: 14px;
+    color: #545454;
+    margin-top: 5px;
+}
