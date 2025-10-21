@@ -38,6 +38,7 @@ public class IndexController : ControllerBase
         return Created("Get fukt", newSitemap);
     }
 
+    [HttpPost("submit-page")]
     public ActionResult<Page> Page([FromQuery] Page page)
     {
         _logger.LogDebug($"Recieved new page: {page.Content.Title}, ID: {page.PageID}");
