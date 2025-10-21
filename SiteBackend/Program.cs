@@ -88,7 +88,7 @@ void BuildDev(WebApplicationBuilder bldr)
     }
     else
     {
-        for(int i = 0; i < 1000; i++)
+        for(int i = 0; i < 20; i++)
             Console.WriteLine("You should probably fill in the logic production");
         throw new Exception("You should probably fill in the logic production environment.....");
     }

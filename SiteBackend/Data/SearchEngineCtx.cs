@@ -28,6 +28,8 @@ public class SearchEngineCtx : DbContext
     public DbSet<Page> Pages { get; set; }
     public DbSet<Content> Contents { get; set; }
 
+    // Search
+    public DbSet<Word> Words { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Add pgVector for search

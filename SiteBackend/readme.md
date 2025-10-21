@@ -17,3 +17,5 @@ Backend for my [portfolio site](https://zacharymunshaw.dev), public because is d
 - ### Data Collection
   - Sitemap traversal and extraction
   - Page content extraction
+
+- ### Data Embedding
