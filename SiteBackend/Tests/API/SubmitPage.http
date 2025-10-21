@@ -1,0 +1,16 @@
+@API_HostAddress = http://localhost:1234
+
+
+### Submit a test sitemap
+POST {{API_HostAddress}}/indexer/submit-page
+Accept: application/json
+Content-Type: application/json
+
+{
+  "page-id": "2",
+  "content": 
+    {
+      "title": "Help",
+      "content": "There's someone in the walls"
+    }
+}
