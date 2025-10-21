@@ -6,12 +6,12 @@ namespace SiteBackend.Services;
 public class AIService : IAIService
 {
     private readonly ILogger<AIService> _logger;
-    private readonly EmbeddingClient  _embeddingClient;
+    private readonly IAiClient  _aiClient;
 
-    public AIService(ILogger<AIService> logger)
+    public AIService(ILogger<AIService> logger, IAiClient aiClient)
     {
         _logger = logger;
-        _embeddingClient = new();
+        _aiClient = aiClient;
     }
     
     /// <summary>
@@ -24,7 +24,7 @@ public class AIService : IAIService
     /// <returns>Float array of embedding values.</returns>
     public async Task<float[]> GetEmbeddingAsync(string text)
     {
-        var result = await _embeddingClient.GetEmbeddingAsync(text);
+        var result = await _aiClient.GetEmbeddingAsync(text);
         return result;
     }
 }

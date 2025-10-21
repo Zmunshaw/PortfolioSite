@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using SiteBackend.Database;
+using SiteBackend.Middleware.AIClient;
 using SiteBackend.Repositories.SearchEngine;
 using SiteBackend.Services;
 
@@ -37,6 +38,7 @@ void AddDatabases(WebApplicationBuilder bldr)
 
 void AddServices(WebApplicationBuilder bldr)
 {
+    bldr.Services.AddScoped<IAiClient, AiClient>();
     bldr.Services.AddScoped<IAIService, AIService>();
     bldr.Services.AddScoped<ISitemapService, SitemapService>();
 }
