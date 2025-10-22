@@ -49,6 +49,7 @@ void AddServices(WebApplicationBuilder bldr)
 void AddRepositories(WebApplicationBuilder bldr)
 {
     bldr.Services.AddScoped<IWebsiteRepo, WebsiteRepo>();
+    bldr.Services.AddScoped<IPageRepo, PageRepo>();
 }
 
 void AddControllers(WebApplicationBuilder bldr)
