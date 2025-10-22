@@ -9,7 +9,7 @@ public class PageRepo : IPageRepo
 {
     private readonly ILogger<PageRepo> _logger;
     private readonly IDbContextFactory<SearchEngineCtx> _ctxFactory;
-    private readonly SearchEngineCtx _ctx;
+    private SearchEngineCtx _ctx;
     
     public PageRepo(ILogger<PageRepo> logger, IDbContextFactory<SearchEngineCtx> ctxFactory)
     {
@@ -61,14 +61,33 @@ public class PageRepo : IPageRepo
         _ctx.Pages.Update(page);
     }
 
+    public async Task BatchUpdatePageAsync(IEnumerable<Page> pages)
+    {
+        var batchCtx = await _ctxFactory.CreateDbContextAsync();
+        batchCtx.ChangeTracker.AutoDetectChangesEnabled = false;
+        await Task.WhenAll(pages.Select(page => FindOrCreatePage(page, batchCtx)));
+        batchCtx.ChangeTracker.DetectChanges();
+        await batchCtx.SaveChangesAsync();
+    }
+
     public Task DeletePageAsync(Page page)
     {
         throw new NotImplementedException();
     }
-
-    public async Task SaveChangesAsync()
+    public Task BatchDeletePageAsync(IEnumerable<Page> pages)
     {
+        throw new NotImplementedException();
+    }
+    
+    public async Task SaveChangesAsync(bool clearCtxOnSave = true)
+    {
+        if (!_ctx.ChangeTracker.AutoDetectChangesEnabled)
+            _ctx.ChangeTracker.DetectChanges();
+        
         await _ctx.SaveChangesAsync();
+        
+        if (clearCtxOnSave)
+            _ctx.ChangeTracker.Clear(); // Avoid possible memleak from loaded entities.
     }
     #region Helpers
 
