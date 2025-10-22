@@ -7,7 +7,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "websiteId": "2",
+  "url": "bleg",
   "content": 
     {
       "title": "Help",
