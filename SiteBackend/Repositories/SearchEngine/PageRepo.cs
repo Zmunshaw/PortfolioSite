@@ -103,11 +103,14 @@ public class PageRepo : IPageRepo
         var site = ctx.FindOrCreate(
             s => s.Host == pageHost,
             () => new Website {Host = pageHost, Pages = []});
-        var sitemap = ctx.FindOrCreate(
-            sm => sm.Location == site.Host,
-            () => new Sitemap { IsMapped = false, Location = site.Host });
-        site.Sitemap = sitemap;
-        
+        if (site.Sitemap == null)
+        {
+            var sitemap = ctx.FindOrCreate(
+                sm => sm.Location == site.Host,
+                () => new Sitemap { IsMapped = false, Location = site.Host });
+            site.Sitemap = sitemap;
+        }
+
         var resPage = ctx.FindOrCreate(
             rp => (rp.Url == pageUri.ToString() && rp.Website == site),
             () => new Page {Url = page.Url, Content = new Content(), Website = site});

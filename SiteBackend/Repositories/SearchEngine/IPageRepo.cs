@@ -15,5 +15,5 @@ public interface IPageRepo
     
     Task DeletePageAsync(Page page);
     
-    Task SaveChangesAsync();
+    Task SaveChangesAsync(bool clearCtxOnSave = true);
 }
