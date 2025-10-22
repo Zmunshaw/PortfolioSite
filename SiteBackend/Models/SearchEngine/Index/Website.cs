@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Entity;
 using Pgvector;
+using SiteBackend.Database;
 
 namespace SiteBackend.Models.SearchEngine.Index;
 
@@ -20,7 +22,12 @@ public class Page
     [Key]
     public int PageID { get; set; }
     
+    public string Url { get; set; }
+    
     public Content? Content { get; set; }
+    
+    // FKs
+    public Website? Website { get; set; }
 }
 
 public class Content

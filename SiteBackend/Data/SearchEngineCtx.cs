@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -6,14 +7,9 @@ using SiteBackend.Models.SearchEngine.Index;
 
 namespace SiteBackend.Database;
 
-public class SearchEngineCtx : DbContext
+public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<SearchEngineCtx> logger)
+    : DbContext(options)
 {
-    public SearchEngineCtx(DbContextOptions<SearchEngineCtx> options)
-        : base(options)
-    {
-        
-    }
-    
     // Sitemap
     public DbSet<Sitemap> Sitemaps { get; set; }
     public DbSet<Sitemap> SitemapIndexes { get; set; }
@@ -30,6 +26,8 @@ public class SearchEngineCtx : DbContext
 
     // Search
     public DbSet<Word> Words { get; set; }
+    
+    #region DB Model Rules
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Add pgVector for search
@@ -100,6 +98,38 @@ public class SearchEngineCtx : DbContext
                     : null
             );
     }
+    #endregion
+    
+    #region DB Helper Methods
+    /// <summary>
+    /// Quick and dirty way to make sure an entity exists within the db, while also trying to find it.
+    /// </summary>
+    /// <param name="predicate">Search params
+    /// <code>page => page.Url == example.com</code>
+    /// </param>
+    /// <param name="createEntity">Function for creation
+    /// <code>someVar => new TEntity { TVal1 = someVar.val1, TVal2 = someVar.Val2}</code>
+    /// </param>
+    /// <returns>If no predicate exists it creates one, otherwise it returns the first or default from db</returns>
+    /// <remarks>Won't save any changes it makes, that's up to you, champ.</remarks>
+    public TEntity FindOrCreate<TEntity>(Expression<Func<TEntity, bool>> predicate, Func<TEntity> createEntity) 
+        where TEntity : class
+    {
+        var entity = Set<TEntity>().FirstOrDefault(predicate);
+        if (entity != null) return entity;
+        
+        logger.LogDebug("no entity found, creating new {Name}.", typeof(TEntity).Name);
+        entity = createEntity();
+        Set<TEntity>().Add(entity);
+        return entity;
+    }
+    #endregion
+    
+    
+    
+    #region Validate DBSet
+    
+    #endregion
 }
 
 public class SitemapCtxFactory : IDesignTimeDbContextFactory<SearchEngineCtx>
@@ -111,6 +141,6 @@ public class SitemapCtxFactory : IDesignTimeDbContextFactory<SearchEngineCtx>
         optionsBuilder.UseNpgsql("Host=localhost;Port=5433;Database=dev-db;Username=pg-dev;Password=dev-pw",
             npgsqlOptions => npgsqlOptions.UseVector());
 
-        return new SearchEngineCtx(optionsBuilder.Options);
+        return new SearchEngineCtx(optionsBuilder.Options, null);
     }
 }
