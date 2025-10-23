@@ -30,6 +30,22 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
     #region DB Model Rules
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // (Co)Dependant relationships
+        // Content Depends on page
+        modelBuilder.Entity<Content>()
+            .HasOne(c => c.Page)
+            .WithOne(p => p.Content)
+            .HasForeignKey<Content>(ct => ct.ContentID);
+        
+        modelBuilder.Entity<Url>()
+            .HasOne(p => p.Page)
+            .WithOne(p => p.Url)
+            .HasForeignKey<Url>(url => url.UrlID);
+
+        modelBuilder.Entity<Sitemap>()
+            .HasOne(sm => sm.Website)
+            .WithOne(ws => ws.Sitemap)
+            .HasForeignKey<Sitemap>(sm => sm.SitemapID);
         // Add pgVector for search
         modelBuilder.HasPostgresExtension("vector");
 
@@ -42,7 +58,7 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
             .Property(p => p.SparseVectors)
             .HasColumnType("sparsevec(768)");
         
-        // Sort google sitemap conventions
+        // Establish polymorphic nature of MediaEntry table
         modelBuilder.Entity<MediaEntry>()
             .HasDiscriminator<MediaType>("Type")
             .HasValue<ImageEntry>(MediaType.Image)
@@ -123,12 +139,6 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
         Set<TEntity>().Add(entity);
         return entity;
     }
-    #endregion
-    
-    
-    
-    #region Validate DBSet
-    
     #endregion
 }
 
