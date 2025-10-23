@@ -7,14 +7,14 @@ import (
 )
 
 type PageData struct {
-	WebsiteID int    `json:"websiteId"`
-	Title     string `json:"title"`
-	Text      string `json:"text"`
+	PageURL string `json:"url"`
+	Title   string `json:"title"`
+	Text    string `json:"text"`
 }
 
-func GetPage(c *colly.Collector, urlToScrape string, siteID int) (error, PageData) {
+func GetPage(c *colly.Collector, urlToScrape string, scrapedPagesData *ScrapedPagesData) error {
 	pageData := PageData{
-		WebsiteID: siteID,
+		PageURL: urlToScrape,
 	}
 
 	c.OnHTML("title", func(e *colly.HTMLElement) {
@@ -34,8 +34,11 @@ func GetPage(c *colly.Collector, urlToScrape string, siteID int) (error, PageDat
 	urlToScrape = "https://" + urlToScrape
 	err := c.Visit(urlToScrape)
 	if err != nil {
-		return err, pageData
+		return err
 	}
 
-	return nil, pageData
+	scrapedPagesData.ScrapedPageMu.Lock()
+	defer scrapedPagesData.ScrapedPageMu.Unlock()
+	scrapedPagesData.ScrapedPages = append(scrapedPagesData.ScrapedPages, pageData)
+	return nil
 }
