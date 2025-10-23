@@ -23,11 +23,9 @@ public static class LoadSeedData
             string[] lines = File.ReadAllLines(SiteSeedPath);
             foreach (string line in lines)
             {
-                if (!string.IsNullOrWhiteSpace(line))
-                {
-                    string[] values = line.Split(','); 
-                    sites.Add(values);
-                }
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                var values = line.Split(','); 
+                sites.Add(values);
             }
         }
         catch (Exception ex)
@@ -57,10 +55,7 @@ public static class LoadSeedData
         ConcurrentBag<Website> websites = [];
         Parallel.ForEach(sites, site =>
             {
-                websites.Add(new Website
-                {
-                    Host = site[1] 
-                });
+                websites.Add(new Website(site[1]));
             }
         );
         
