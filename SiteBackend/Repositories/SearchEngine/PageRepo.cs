@@ -99,7 +99,7 @@ public class PageRepo : IPageRepo
 
     async Task<Page?> FindOrCreatePage(Page page, SearchEngineCtx ctx)
     {
-        if (!Uri.TryCreate(page.Url, UriKind.Absolute, out var pageUri))
+        if (!Uri.TryCreate(page.Url.Location, UriKind.Absolute, out var pageUri))
         {
             _logger.LogError($"Invalid url: {page.Url} on page {page.Content?.Title}");
             return null;
@@ -108,17 +108,15 @@ public class PageRepo : IPageRepo
         var pageHost = pageUri.Host;
         var site = ctx.FindOrCreate(
             s => s.Host == pageHost,
-            () => new Website {Host = pageHost, Pages = []});
-        if (site.Sitemap == null)
-        {
+            () => new Website (pageHost));
+
             var sitemap = ctx.FindOrCreate(
                 sm => sm.Location == site.Host,
                 () => new Sitemap { IsMapped = false, Location = site.Host });
             site.Sitemap = sitemap;
-        }
 
         var resPage = ctx.FindOrCreate(
-            rp => (rp.Url == pageUri.ToString() && rp.Website == site),
+            rp => (rp.Url.Location == pageUri.ToString() && rp.Website == site),
             () => new Page {Url = page.Url, Content = new Content(), Website = site});
         
         return resPage;
