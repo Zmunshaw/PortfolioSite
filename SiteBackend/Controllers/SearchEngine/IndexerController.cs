@@ -45,6 +45,7 @@ public class IndexController : ControllerBase
     [HttpPost("submit-page")]
     public async Task<ActionResult<Page>> Page([FromBody] Page page)
     {
+        // TODO Fixit: To fit the pattern this should page url to website sitemap
         _logger.LogDebug($"Recieved new page: {page.Content.Title}, ID: {page.PageID}");
         await _pageRepo.AddPageAsync(page);
         return Created("Get fukt", page);

@@ -1,16 +1,7 @@
 @API_HostAddress = http://localhost:1234
 
 
-### Submit a test sitemap
-POST {{API_HostAddress}}/indexer/submit-page
+### Submit a test sitema
+GET {{API_HostAddress}}/crawler/scrape
 Accept: application/json
 Content-Type: application/json
-
-{
-  "url": "bleg",
-  "content": 
-    {
-      "title": "Help",
-      "text": "There's someone in the walls"
-    }
-}
