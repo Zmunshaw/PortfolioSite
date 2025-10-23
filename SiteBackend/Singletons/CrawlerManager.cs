@@ -7,12 +7,13 @@ public class CrawlerManager : BackgroundService
     public static CrawlerManager Instance { get; }
     
     private readonly ILogger<CrawlerManager> _logger;
-    private readonly IWebsiteRepo _websiteRepo;
-
-    public CrawlerManager(ILogger<CrawlerManager> logger, IWebsiteRepo websiteRepo)
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IPageRepo _pageRepo;
+    public CrawlerManager(ILogger<CrawlerManager> logger, IHttpClientFactory httpClientFactory, IPageRepo pageRepo)
     {
         _logger = logger;
-        _websiteRepo = websiteRepo;
+        _httpClientFactory = httpClientFactory;
+        _pageRepo = pageRepo;
     }
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
