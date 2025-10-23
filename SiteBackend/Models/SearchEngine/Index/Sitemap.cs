@@ -33,7 +33,7 @@ public class Sitemap
     }
     
     [Key]
-    public int SitemapId { get; set; }
+    public int SitemapID { get; set; }
     public Website Website { get; set; }
     
     [Required]
@@ -79,10 +79,11 @@ public class Url
     public List<MediaEntry>? Media { get; set; }
 }
 
+// polymorphic table
 public abstract class MediaEntry
 {
     [Key]
-    public int MediaEntryId { get; set; }
+    public int MediaEntryID { get; set; }
     
     public string Location { get; set; } = default!;
     
@@ -91,6 +92,7 @@ public abstract class MediaEntry
 
 public class ImageEntry : MediaEntry
 {
+    
     public string Location { get; set; } = default!;
 }
 
