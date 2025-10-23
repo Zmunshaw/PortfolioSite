@@ -36,19 +36,17 @@ public static class LoadSeedData
 
         if (isDevelopment)
         {
-            for (int i = 10; i > 0; i--)
-            {
-                for (int j = 0; j < 10; j++)
-                    Console.Write("WARNING - WARNING - ");
-
-                Console.WriteLine();
-                Console.WriteLine($"DELETING DATABASE IN {i}");
-                Thread.Sleep(1000);
-            }
-            Thread.Sleep(1000);
+            Console.Write("WARNING - WARNING ");
+            Console.WriteLine();
+            Console.WriteLine($"PRESS ANY KEY TO DELETE DATABASE CONTINUE TO THE DEVELOPMENT");
+            Console.ReadKey();
             Console.WriteLine("Deleting Database...");
             dbCtx.Database.EnsureDeleted();
+            Console.WriteLine("Database deleted...");
+            Console.WriteLine("Creating Database...");
             dbCtx.Database.EnsureCreated();
+            Console.WriteLine("Database created...");
+            Console.WriteLine("Getting Seed Sites...");
             sites = sites.Take(sites.Count / 400).ToList(); // otherwise, will take longer than heat-death of universe.
         }
 
