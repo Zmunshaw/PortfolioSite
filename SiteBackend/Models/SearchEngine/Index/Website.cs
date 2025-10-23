@@ -39,9 +39,7 @@ public class Page
     
     [Key]
     public int PageID { get; set; }
-    
     public Url Url { get; set; }
-
     public Content Content { get; set; } = new();
     
     // FKs
