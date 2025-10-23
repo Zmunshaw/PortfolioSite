@@ -59,7 +59,10 @@ public class PageRepo : IPageRepo
     public async Task<IEnumerable<Page>> GetPagesAsync(Func<Page, bool> predicate, int take, int skip = 0)
     {
         var batchCtx = _ctxFactory.CreateDbContext();
-        return await Task.Run(() => batchCtx.Pages.Where(predicate).Skip(skip).Take(take));
+        return await Task.Run(() => batchCtx.Pages.Include(p => p.Url)
+            .Include(p => p.Content)
+            .Include(p => p.Website)
+            .Where(predicate).Skip(skip).Take(take));
     }
 
     public async Task UpdatePageAsync(Page page)
@@ -110,10 +113,10 @@ public class PageRepo : IPageRepo
             s => s.Host == pageHost,
             () => new Website (pageHost));
 
-            var sitemap = ctx.FindOrCreate(
-                sm => sm.Location == site.Host,
-                () => new Sitemap { IsMapped = false, Location = site.Host });
-            site.Sitemap = sitemap;
+        var sitemap = ctx.FindOrCreate(
+            sm => sm.Location == site.Host,
+            () => new Sitemap { IsMapped = false, Location = site.Host });
+        site.Sitemap = sitemap;
 
         var resPage = ctx.FindOrCreate(
             rp => (rp.Url.Location == pageUri.ToString() && rp.Website == site),

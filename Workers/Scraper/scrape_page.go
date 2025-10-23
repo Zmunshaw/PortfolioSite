@@ -2,43 +2,51 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/gocolly/colly/v2"
 )
 
-type PageData struct {
-	PageURL string `json:"url"`
-	Title   string `json:"title"`
-	Text    string `json:"text"`
-}
+func GetPage(c *colly.Collector, scrapeTarget string, dataChan chan *DTOPageScrapeData) error {
+	dtoScrapeObject := &DTOPageScrapeData{}
 
-func GetPage(c *colly.Collector, urlToScrape string, scrapedPagesData *ScrapedPagesData) error {
-	pageData := PageData{
-		PageURL: urlToScrape,
-	}
+	c.OnResponse(func(r *colly.Response) {
+		if r.StatusCode == http.StatusOK {
+			fmt.Printf("Scraping page %s\n", scrapeTarget)
+		}
+	})
 
 	c.OnHTML("title", func(e *colly.HTMLElement) {
-		fmt.Println("Title:", e.Text)
-		pageData.Title = e.Text
+		if e.Text == "" {
+			fmt.Println("Title is empty on", e.Request.URL.String())
+		}
+		dtoScrapeObject.Title = e.Text
 	})
 
 	c.OnHTML("article, div#content, main", func(e *colly.HTMLElement) {
-		fmt.Println("Content:\n", e.Text)
-		pageData.Text = e.Text
+		if e.Text == "" {
+			fmt.Println("Content is empty on", e.Request.URL.String())
+		}
+		dtoScrapeObject.Text = e.Text
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
-
+		fmt.Println("OnError:", r.StatusCode)
+		fmt.Println(err)
 	})
 
-	urlToScrape = "https://" + urlToScrape
+	c.OnScraped(func(r *colly.Response) {
+		dtoScrapeObject.CrawTime = time.Now().UTC()
+		dataChan <- dtoScrapeObject
+	})
+
+	urlToScrape := "https://" + scrapeTarget
+
 	err := c.Visit(urlToScrape)
 	if err != nil {
 		return err
 	}
 
-	scrapedPagesData.ScrapedPageMu.Lock()
-	defer scrapedPagesData.ScrapedPageMu.Unlock()
-	scrapedPagesData.ScrapedPages = append(scrapedPagesData.ScrapedPages, pageData)
 	return nil
 }

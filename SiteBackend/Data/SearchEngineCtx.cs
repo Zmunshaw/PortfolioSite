@@ -72,7 +72,7 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
             .HasForeignKey(s => s.ParentSitemapId)
             .OnDelete(DeleteBehavior.Restrict);
         
-        // Fix bullshit non-UTC errors
+        // Fix non-UTC errors
         modelBuilder.Entity<Sitemap>()
             .Property(lm => lm.LastModified)
             .HasConversion(

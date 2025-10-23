@@ -53,7 +53,11 @@ public static class LoadSeedData
         ConcurrentBag<Website> websites = [];
         Parallel.ForEach(sites, site =>
             {
-                websites.Add(new Website(site[1]));
+                string trimmedSite = site[1].Trim('"');
+                if (Uri.TryCreate(trimmedSite, UriKind.RelativeOrAbsolute, out Uri _))
+                    websites.Add(new Website(trimmedSite));
+                else
+                    Console.WriteLine($"Error: Invalid URL: {trimmedSite}");
             }
         );
         

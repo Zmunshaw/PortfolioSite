@@ -32,8 +32,18 @@ public class CrawlerService : ICrawlerService
 
     public async Task<List<Page>> GetEmptyPagesAsync()
     {
-        return _pageRepo.GetPagesAsync(page =>
-            page.Content?.Text == string.Empty || page.Content == null, 100).Result.ToList();
+        // TODO: Add more robust logic for determining valid crawl candidates.
+        var validPages = _pageRepo.GetPagesAsync(page => page.LastCrawlAttempt == null, 5)
+            .Result.ToList();
+        
+        validPages.ForEach(async void (validPage) => 
+        {
+            validPage.LastCrawlAttempt = DateTime.UtcNow;
+            await _pageRepo.UpdatePageAsync(validPage);
+        });
+
+        await _pageRepo.SaveChangesAsync();
+        return validPages;
     }
 
     public async Task BatchUpdatePagesAsync(IEnumerable<Page> pages)

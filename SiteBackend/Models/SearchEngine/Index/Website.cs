@@ -42,6 +42,8 @@ public class Page
     public Url Url { get; set; }
     public Content Content { get; set; } = new();
     
+    public DateTime? LastCrawlAttempt {get; set;}
+    public DateTime? LastCrawled { get; set; }
     // FKs
     public Website Website { get; set; }
 }

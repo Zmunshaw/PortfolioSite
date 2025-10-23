@@ -21,6 +21,8 @@ public class CrawlerController : ControllerBase
     [HttpPost("scrape")]
     public async Task<IActionResult> SubmitPages([FromBody] List<Page> pages)
     {
+        _logger.LogInformation("Submitting pages...");
+        
         await _crawlerService.BatchUpdatePagesAsync(pages);
         
         return Created("crawler", null);
@@ -30,6 +32,7 @@ public class CrawlerController : ControllerBase
     public async Task<IActionResult> Scrape()
     {
         var pages = await _crawlerService.GetEmptyPagesAsync();
+        _logger.LogDebug($"Got {pages.Count} pages for scraping.");
         return Ok(pages);
     }
 }
