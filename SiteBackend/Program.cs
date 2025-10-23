@@ -44,6 +44,7 @@ void AddServices(WebApplicationBuilder bldr)
     bldr.Services.AddScoped<IAiClient, AiClient>();
     bldr.Services.AddScoped<IAIService, AIService>();
     bldr.Services.AddScoped<ISitemapService, SitemapService>();
+    bldr.Services.AddScoped<ICrawlerService, CrawlerService>();
 }
 
 void AddRepositories(WebApplicationBuilder bldr)

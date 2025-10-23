@@ -23,11 +23,21 @@ public enum MediaType
 
 public class Sitemap
 {
+    public Sitemap () {}
+
+    public Sitemap(Website website, string? location = null, List<Url>? urlSet = null)
+    {
+        Website = website;
+        Location = location ?? website.Host;
+        UrlSet = urlSet ?? [..website.Pages.Select(x => x.Url).ToList()];
+    }
+    
     [Key]
     public int SitemapId { get; set; }
-
+    public Website Website { get; set; }
+    
     [Required]
-    public string Location { get; set; } = default!;
+    public string? Location { get; set; }
     
     public DateTime? LastModified { get; set; }
     
@@ -44,11 +54,20 @@ public class Sitemap
 
 public class Url
 {
+    public Url() {}
+
+    public Url(string location, Sitemap? sitemap = null, Page? page = null)
+    {
+        Location = location;
+    }
+    
     [Key]
     public int UrlID { get; set; }
+    public Sitemap? Sitemap { get; set; }
+    public Page? Page { get; set; }
 
     [Required]
-    public string Location { get; set; } = default!;
+    public string Location { get; set; }
 
     public DateTime? LastModified { get; set; }
 
