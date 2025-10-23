@@ -47,15 +47,21 @@ public class PageRepo : IPageRepo
         return _ctx.Pages.Where(predicate).FirstOrDefault();
     }
 
-    public async Task<IEnumerable<Page>> GetAllPagesAsync(Func<Page, bool> predicate)
+    public async Task<IEnumerable<Page>> GetPagesAsync(Func<Page, bool> predicate)
     {
         var batchCtx = await _ctxFactory.CreateDbContextAsync();
         
         // Maybe this actually works and we offload to another thread but vanilla EF blows... so....
         // TODO: Fix threading issues, probably
-        return await Task.Run(() => batchCtx.Pages.Where(predicate).ToArray());
+        return await Task.Run(() => batchCtx.Pages.Where(predicate));
     }
-    
+
+    public async Task<IEnumerable<Page>> GetPagesAsync(Func<Page, bool> predicate, int take, int skip = 0)
+    {
+        var batchCtx = _ctxFactory.CreateDbContext();
+        return await Task.Run(() => batchCtx.Pages.Where(predicate).Skip(skip).Take(take));
+    }
+
     public async Task UpdatePageAsync(Page page)
     {
         _ctx.Pages.Update(page);
@@ -65,7 +71,7 @@ public class PageRepo : IPageRepo
     {
         var batchCtx = await _ctxFactory.CreateDbContextAsync();
         batchCtx.ChangeTracker.AutoDetectChangesEnabled = false;
-        await Task.WhenAll(pages.Select(page => FindOrCreatePage(page, batchCtx)));
+        await Task.WhenAll(pages.Select(page => FindOrCreatePage(page, batchCtx)).ToList());
         batchCtx.ChangeTracker.DetectChanges();
         await batchCtx.SaveChangesAsync();
     }

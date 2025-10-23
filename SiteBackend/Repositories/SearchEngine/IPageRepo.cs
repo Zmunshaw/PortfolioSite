@@ -8,7 +8,8 @@ public interface IPageRepo
     Task BatchAddPageAsync(IEnumerable<Page> pages);
     
     Task<Page?> GetPageAsync(Func<Page, bool> predicate);
-    Task<IEnumerable<Page>> GetAllPagesAsync(Func<Page, bool> predicate);
+    Task<IEnumerable<Page>> GetPagesAsync(Func<Page, bool> predicate);
+    Task<IEnumerable<Page>> GetPagesAsync(Func<Page, bool> predicate, int take, int skip = 0);
     
     Task UpdatePageAsync(Page page);
     Task BatchUpdatePageAsync(IEnumerable<Page> pages);
