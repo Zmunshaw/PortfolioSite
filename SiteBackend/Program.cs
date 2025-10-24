@@ -6,6 +6,7 @@ using SiteBackend.Data.SeedData;
 using SiteBackend.Middleware.AIClient;
 using SiteBackend.Repositories.SearchEngine;
 using SiteBackend.Services;
+using SiteBackend.Singletons;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,12 +46,15 @@ void AddServices(WebApplicationBuilder bldr)
     bldr.Services.AddScoped<IAIService, AIService>();
     bldr.Services.AddScoped<ISitemapService, SitemapService>();
     bldr.Services.AddScoped<ICrawlerService, CrawlerService>();
+    bldr.Services.AddHostedService<EmbeddingManager>(); 
 }
 
 void AddRepositories(WebApplicationBuilder bldr)
 {
     bldr.Services.AddScoped<IWebsiteRepo, WebsiteRepo>();
     bldr.Services.AddScoped<IPageRepo, PageRepo>();
+    bldr.Services.AddScoped<IContentRepo, ContentRepo>();
+    bldr.Services.AddScoped<IDictionaryRepo, DictionaryRepo>();
 }
 
 void AddControllers(WebApplicationBuilder bldr)

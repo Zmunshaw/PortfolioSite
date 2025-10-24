@@ -14,5 +14,5 @@ public class Word
     // TODO: This should be a sparse vector
     // For pgVector embeddings
     [Column(TypeName = "vector(3)")]
-    public SparseVector? SparseVectors { get; set; }
+    public SparseVector? Embedding { get; set; }
 }

@@ -84,12 +84,17 @@ public class TextEmbedding
 {
     public TextEmbedding() {}
     
+    public TextEmbedding(string text, Vector embedding)
+    {
+        RawText = text;
+        Embedding = embedding;
+    }
+    
     [Key]
     public int TextEmbeddingID { get; set; }
     
     public string? EmbeddingHash { get; set; }
     public string? RawText { get; set; }
-    public List<Word> Words { get; set; } = new();
     
     [Column(TypeName = "vector(768)")]
     public Vector? Embedding { get; set; }

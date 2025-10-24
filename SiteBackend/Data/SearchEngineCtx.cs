@@ -56,7 +56,7 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
             .HasColumnType("vector(768)");
         // For word meaning
         modelBuilder.Entity<Word>()
-            .Property(p => p.SparseVectors)
+            .Property(p => p.Embedding)
             .HasColumnType("sparsevec(768)");
         
         // Establish polymorphic nature of MediaEntry table

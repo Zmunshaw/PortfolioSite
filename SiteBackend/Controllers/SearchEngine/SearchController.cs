@@ -14,7 +14,7 @@ public class SearchController(IAIService aiService, ILogger<SearchController> lo
         [FromQuery] int limit = 30,
         [FromQuery] string? site = null)
     {
-        Vector embeddings = new(await aiService.GetEmbeddingAsync(q));
+        var searchResults = await aiService.GetSearchResults(q);
         // Simulate creating a list of results up to maxResults
         var results = Enumerable.Range(1, limit).Select(i => new SearchResult
         {
