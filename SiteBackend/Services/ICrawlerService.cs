@@ -1,14 +1,12 @@
+using SiteBackend.DTO;
 using SiteBackend.Models.SearchEngine.Index;
 
 namespace SiteBackend.Services;
 
 public interface ICrawlerService
 {
-    Task UpdatePageAsync(Page page);
-    Task BatchUpdatePagesAsync(IEnumerable<Page> pages);
+    Task UpdateCrawlerDataAsync(DTOCrawlerData page);
+    Task BatchUpdateCrawlerDataAsync(IEnumerable<DTOCrawlerData> pages);
     
-    Task UpdateSitemapAsync(Page page);
-    Task BatchUpdateSitemapsAsync(IEnumerable<Page> pages);
-    
-    Task<List<Page>> GetEmptyPagesAsync();
+    Task<IEnumerable<DTOCrawlRequest>> GetEmptyPagesAsync(int amountToGet = 100);
 }

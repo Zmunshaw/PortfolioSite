@@ -25,11 +25,15 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
     public DbSet<Content> Contents { get; set; }
 
     // Search
+    public DbSet<TextEmbedding> TextEmbeddings { get; set; }
     public DbSet<Word> Words { get; set; }
     
     #region DB Model Rules
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Add pgVector for search
+        modelBuilder.HasPostgresExtension("vector");
+        
         // (Co)Dependant relationships
         // Content Depends on page
         modelBuilder.Entity<Content>()
@@ -46,12 +50,10 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
             .HasOne(sm => sm.Website)
             .WithOne(ws => ws.Sitemap)
             .HasForeignKey<Sitemap>(sm => sm.SitemapID);
-        // Add pgVector for search
-        modelBuilder.HasPostgresExtension("vector");
 
         // For paragraph meaning
-        modelBuilder.Entity<Content>()
-            .Property(p => p.ContentEmbedding)
+        modelBuilder.Entity<TextEmbedding>()
+            .Property(p => p.Embedding)
             .HasColumnType("vector(768)");
         // For word meaning
         modelBuilder.Entity<Word>()

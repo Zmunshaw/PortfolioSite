@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using SiteBackend.Database;
 using SiteBackend.Models.SearchEngine.Index;
@@ -17,7 +18,6 @@ public class PageRepo : IPageRepo
         _ctxFactory = ctxFactory;
         _ctx = _ctxFactory.CreateDbContext();
     }
-
 
     public bool ToggleChangeTracker()
     {
@@ -51,9 +51,8 @@ public class PageRepo : IPageRepo
     {
         var batchCtx = await _ctxFactory.CreateDbContextAsync();
         
-        // Maybe this actually works and we offload to another thread but vanilla EF blows... so....
-        // TODO: Fix threading issues, probably
-        return await Task.Run(() => batchCtx.Pages.Where(predicate));
+         var batchRes = await Task.Run(() => batchCtx.Pages.Where(predicate));
+         return batchRes;
     }
 
     public async Task<IEnumerable<Page>> GetPagesAsync(Func<Page, bool> predicate, int take, int skip = 0)
@@ -72,10 +71,81 @@ public class PageRepo : IPageRepo
 
     public async Task BatchUpdatePageAsync(IEnumerable<Page> pages)
     {
+        var enumerable = pages as Page[] ?? pages.ToArray();
+        Dictionary<int, Page> updatedPageDict = new Dictionary<int, Page>();
+        Dictionary<int, Page> dbPageDict;
+        
+        foreach (var page in enumerable)
+        {
+            _logger.LogDebug("Adding page: {Page} to dictionary", page.PageID);
+
+            if (!updatedPageDict.ContainsKey(page.PageID))
+            {
+                updatedPageDict.Add(page.PageID, page);
+            }
+            else
+                _logger.LogDebug("Already Exists {Page} in dictionary", page.PageID);
+        }
+        
+        _logger.LogDebug("Updating {Page} pages", updatedPageDict.Count());
         var batchCtx = await _ctxFactory.CreateDbContextAsync();
-        batchCtx.ChangeTracker.AutoDetectChangesEnabled = false;
-        await Task.WhenAll(pages.Select(page => FindOrCreatePage(page, batchCtx)).ToList());
-        batchCtx.ChangeTracker.DetectChanges();
+        dbPageDict = await batchCtx.Pages
+            .Where(dbp => updatedPageDict.Keys.Contains(dbp.PageID))
+            .Include(dbp => dbp.Content)
+            .Include(dbp => dbp.Website)
+            .ToDictionaryAsync(dbp => dbp.PageID, dbp => dbp);
+
+        if (dbPageDict.Count != updatedPageDict.Count)
+        {
+            _logger.LogWarning("Page count mismatch, 1 or more pages didn't exist in the database...");
+            _logger.LogDebug("Updated Page count: {UpdatedCount}, Database Page count: {DatabaseCount}", 
+                dbPageDict.Count, updatedPageDict.Count);
+        }
+
+        foreach (var kvp in dbPageDict)
+        {
+            var dbPage = dbPageDict[kvp.Key];
+            var updatedPage = updatedPageDict[kvp.Key];
+
+            bool contentChanged = false;
+            
+            // Page
+            if (updatedPage.LastCrawled != null &&  updatedPage.LastCrawled != dbPage.LastCrawled)
+                dbPage.LastCrawled = updatedPage.LastCrawled;
+            if (updatedPage.LastCrawlAttempt != null && updatedPage.LastCrawlAttempt != dbPage.LastCrawlAttempt)
+                dbPage.LastCrawlAttempt = updatedPage.LastCrawlAttempt;
+            
+            // Content
+            if (dbPage.Content != null)
+            {
+                // Proceed with the update
+                if (updatedPage.Content.Title != dbPage.Content.Title)
+                    dbPage.Content.Title = updatedPage.Content.Title;
+                if (updatedPage.Content.Text != dbPage.Content.Text)
+                {
+                    dbPage.Content.Text = updatedPage.Content.Text;
+                    contentChanged = true;
+                }
+
+                if (updatedPage.Content.ContentHash != dbPage.Content.ContentHash)
+                    dbPage.Content.ContentHash = updatedPage.Content.ContentHash;
+            }
+            else
+            {
+                _logger.LogWarning("Content is null for PageID {PageID}", dbPage.PageID);
+            }
+            
+            if (contentChanged == true)
+                dbPage.Content.NeedsEmbedding = true;
+        }
+        
+        var bulkConfig = new BulkConfig
+        {
+            PreserveInsertOrder = true,
+            SetOutputIdentity = false,
+        };
+        
+        await batchCtx.BulkUpdateAsync(dbPageDict.Values, bulkConfig);
         await batchCtx.SaveChangesAsync();
     }
 

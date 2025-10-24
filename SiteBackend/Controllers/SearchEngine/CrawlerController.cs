@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SiteBackend.DTO;
 using SiteBackend.Models.SearchEngine.Index;
 using SiteBackend.Services;
 
@@ -19,11 +20,11 @@ public class CrawlerController : ControllerBase
 
     [RequestSizeLimit(20 * (100 * 1024 * 1024))]
     [HttpPost("scrape")]
-    public async Task<IActionResult> SubmitPages([FromBody] List<Page> pages)
+    public async Task<IActionResult> SubmitPages([FromBody] List<DTOCrawlerData> pages)
     {
         _logger.LogInformation("Submitting pages...");
         
-        await _crawlerService.BatchUpdatePagesAsync(pages);
+        await _crawlerService.BatchUpdateCrawlerDataAsync(pages);
         
         return Created("crawler", null);
     }
@@ -31,7 +32,7 @@ public class CrawlerController : ControllerBase
     [HttpGet("scrape")]
     public async Task<IActionResult> Scrape()
     {
-        var pages = await _crawlerService.GetEmptyPagesAsync();
+        var pages = _crawlerService.GetEmptyPagesAsync().Result.ToList();
         _logger.LogDebug($"Got {pages.Count} pages for scraping.");
         return Ok(pages);
     }
