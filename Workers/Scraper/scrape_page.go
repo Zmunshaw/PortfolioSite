@@ -21,6 +21,7 @@ func GetPage(c *colly.Collector, scrapeTarget DTOCrawlRequest) {
 	}
 }
 
+// TODO IMRPOVE: Data recieved, specifically text borders are being noisy garbage, need to extract more "meaning" and less noise.
 func SetupCollector(dataChan chan *DTOCrawlerData) *colly.Collector {
 	c := colly.NewCollector()
 

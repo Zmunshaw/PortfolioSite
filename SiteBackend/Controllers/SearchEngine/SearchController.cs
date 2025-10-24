@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Pgvector;
-using SiteBackend.Middleware.AIClient;
 using SiteBackend.Models.SearchEngine;
 using SiteBackend.Services;
 

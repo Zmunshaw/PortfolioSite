@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using SiteBackend.DTO;
-using SiteBackend.Models.SearchEngine.Index;
 using SiteBackend.Services;
 
 namespace SiteBackend.Controllers.SearchEngine;
