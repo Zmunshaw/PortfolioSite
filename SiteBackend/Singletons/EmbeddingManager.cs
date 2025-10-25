@@ -1,8 +1,5 @@
-using System.Collections.Concurrent;
 using System.Security.Cryptography;
-using Microsoft.VisualBasic;
-using SiteBackend.Middleware.AIClient;
-using SiteBackend.Models.SearchEngine;
+using System.Text;
 using SiteBackend.Models.SearchEngine.Index;
 using SiteBackend.Repositories.SearchEngine;
 using SiteBackend.Services;
@@ -11,18 +8,18 @@ namespace SiteBackend.Singletons;
 
 public class EmbeddingManager : BackgroundService
 {
-    private readonly ILogger<EmbeddingManager> _logger;
+    private const int MinWordSize = 2;
+    private const int ChunkSize = 500;
     private readonly IAIService _aiService;
     private readonly IContentRepo _contentRepo;
     private readonly IDictionaryRepo _dictionaryRepo;
+    private readonly ILogger<EmbeddingManager> _logger;
     SHA256 _hasher = SHA256.Create();
 
-    private const int MinWordSize = 2;
-    private const int ChunkSize = 500;
     public EmbeddingManager(IServiceScopeFactory scopeFactory)
     {
         var curScope = scopeFactory.CreateScope();
-        
+
         _logger = curScope.ServiceProvider.GetRequiredService<ILogger<EmbeddingManager>>();
         _aiService = curScope.ServiceProvider.GetRequiredService<IAIService>();
         _contentRepo = curScope.ServiceProvider.GetRequiredService<IContentRepo>();
@@ -33,36 +30,42 @@ public class EmbeddingManager : BackgroundService
     {
         _logger.LogInformation("{Manager} running at: {time}", ToString(), DateTimeOffset.Now);
         Task? updatePageEmbeddingTask = null;
-        
+
         while (!stoppingToken.IsCancellationRequested)
         {
             // Your long-running background task logic goes here
             _logger.LogInformation("Performing background task...");
             if (updatePageEmbeddingTask == null || updatePageEmbeddingTask.IsCompletedSuccessfully)
             {
-                updatePageEmbeddingTask = UpdatePageEmbeddings();
+                updatePageEmbeddingTask = Task.Run(async () => await UpdatePageEmbeddings());
             }
-            else
+            else if (updatePageEmbeddingTask != null && updatePageEmbeddingTask.IsFaulted)
             {
-                _logger.LogWarning("Something went wrong while updating page embeddings.");
-                if (updatePageEmbeddingTask.IsFaulted)
-                    _logger.LogDebug(updatePageEmbeddingTask.Exception.ToString());
-                
+                _logger.LogWarning("Updating page embedding task faulted: {error}", updatePageEmbeddingTask.Exception);
                 updatePageEmbeddingTask = null;
             }
-            // Simulate work or a delay
-            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken); 
-        }
+            else if (updatePageEmbeddingTask != null && updatePageEmbeddingTask.IsCanceled)
+            {
+                _logger.LogWarning("Updating page embedding task canceled: {error}", updatePageEmbeddingTask.Exception);
+            }
 
-        _logger.LogInformation("{Manager} stopping at: {time}", ToString(), DateTimeOffset.Now);
+            if (updatePageEmbeddingTask == null)
+            {
+                _logger.LogDebug("Updating page embedding task was null...");
+
+                updatePageEmbeddingTask = Task.Run(() => UpdatePageEmbeddings());
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(500), stoppingToken);
+        }
     }
 
     async Task UpdatePageEmbeddings()
     {
         IEnumerable<Content> updateList = await _contentRepo
-            .GetContentsAsync(ct => ct.NeedsEmbedding && !string.IsNullOrEmpty(ct.Text), 100);
+            .GetContentsAsync(ct => ct.NeedsEmbedding && !string.IsNullOrEmpty(ct.Text), 50);
         var enumerable = updateList as Content[] ?? updateList.ToArray();
-        
+
         _logger.LogDebug("Found {ContentCount} pages that need new embeddings", enumerable.Length);
 
         foreach (var content in enumerable)
@@ -70,21 +73,21 @@ public class EmbeddingManager : BackgroundService
             _logger.LogDebug("Fixing Text...");
             var wordArray = StripInvalidWords(content.Text);
             var wordChunks = ChunkWords(wordArray);
-            
+
             content.Embeddings = await _aiService.EmbedDocumentAsync(content.Title, wordChunks);
-            content.Embeddings.Select(emb => emb.EmbeddingHash = ComputeContentHash(emb.RawText));
-            
+            foreach (var emb in content.Embeddings) emb.EmbeddingHash = ComputeContentHash(emb.RawText);
+
             _logger.LogDebug($"Hash generated: {content.ContentHash}");
             content.ContentHash = ComputeContentHash(content.Text);
         }
-        
+
         await _contentRepo.BatchUpdateContentAsync(updateList);
     }
 
     private string[] StripInvalidWords(string text)
     {
         var words = text.Split([' '], StringSplitOptions.RemoveEmptyEntries);
-    
+
         var validWords = words
             .Where(word => word.Length >= MinWordSize && _dictionaryRepo.RepoContains(word)).ToArray();
 
@@ -95,7 +98,7 @@ public class EmbeddingManager : BackgroundService
     {
         int chunkCount = (int)Math.Ceiling((double)wordArray.Length / ChunkSize);
         var chunks = new string[chunkCount][];
-        
+
         for (int i = 0; i < chunkCount; i++)
         {
             chunks[i] = wordArray.Skip(i * ChunkSize).Take(ChunkSize).ToArray();
@@ -103,10 +106,10 @@ public class EmbeddingManager : BackgroundService
 
         return chunks;
     }
-    
+
     private string ComputeContentHash(string text)
     {
-        var bytes = System.Text.Encoding.UTF8.GetBytes(text);
+        var bytes = Encoding.UTF8.GetBytes(text);
         var hash = _hasher.ComputeHash(bytes);
         return Convert.ToBase64String(hash);
     }

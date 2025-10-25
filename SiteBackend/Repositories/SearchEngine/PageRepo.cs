@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using SiteBackend.Database;
@@ -7,22 +8,15 @@ namespace SiteBackend.Repositories.SearchEngine;
 
 public class PageRepo : IPageRepo
 {
-    private readonly ILogger<PageRepo> _logger;
     private readonly IDbContextFactory<SearchEngineCtx> _ctxFactory;
+    private readonly ILogger<PageRepo> _logger;
     private SearchEngineCtx _ctx;
-    
+
     public PageRepo(ILogger<PageRepo> logger, IDbContextFactory<SearchEngineCtx> ctxFactory)
     {
         _logger = logger;
         _ctxFactory = ctxFactory;
         _ctx = _ctxFactory.CreateDbContext();
-    }
-
-    public bool ToggleChangeTracker()
-    {
-        _ctx.ChangeTracker.AutoDetectChangesEnabled = !_ctx.ChangeTracker.AutoDetectChangesEnabled;
-        
-        return _ctx.ChangeTracker.AutoDetectChangesEnabled;
     }
 
     public async Task AddPageAsync(Page page)
@@ -41,26 +35,32 @@ public class PageRepo : IPageRepo
         await batchCtx.SaveChangesAsync();
     }
 
-    public async Task<Page?> GetPageAsync(Func<Page, bool> predicate)
+    public async Task<Page?> GetPageAsync(Expression<Func<Page, bool>> predicate)
     {
-        return _ctx.Pages.Where(predicate).FirstOrDefault();
+        return await _ctx.Pages.Where(predicate).FirstOrDefaultAsync();
     }
 
-    public async Task<IEnumerable<Page>> GetPagesAsync(Func<Page, bool> predicate)
+    public async Task<IEnumerable<Page>> GetPagesAsync(Expression<Func<Page, bool>> predicate)
     {
         var batchCtx = await _ctxFactory.CreateDbContextAsync();
-        
-         var batchRes = await Task.Run(() => batchCtx.Pages.Where(predicate));
-         return batchRes;
+        return await batchCtx.Pages.Where(predicate).ToListAsync();
     }
 
-    public async Task<IEnumerable<Page>> GetPagesAsync(Func<Page, bool> predicate, int take, int skip = 0)
+    public async Task<IEnumerable<Page>> GetPagesAsync(Expression<Func<Page, bool>> predicate, int take, int skip = 0)
     {
         var batchCtx = _ctxFactory.CreateDbContext();
-        return await Task.Run(() => batchCtx.Pages.Include(p => p.Url)
+        // TODO: convert to DTO for more perf, maybe; Less queries and stuff.
+        return await batchCtx.Pages
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Where(predicate)
+            .Skip(skip)
+            .Take(take)
+            .Include(p => p.Url)
             .Include(p => p.Content)
+            .ThenInclude(c => c.Embeddings)
             .Include(p => p.Website)
-            .Where(predicate).Skip(skip).Take(take));
+            .ToListAsync();
     }
 
     public async Task UpdatePageAsync(Page page)
@@ -73,7 +73,7 @@ public class PageRepo : IPageRepo
         var enumerable = pages as Page[] ?? pages.ToArray();
         Dictionary<int, Page> updatedPageDict = new Dictionary<int, Page>();
         Dictionary<int, Page> dbPageDict;
-        
+
         foreach (var page in enumerable)
         {
             _logger.LogDebug("Adding page: {Page} to dictionary", page.PageID);
@@ -85,7 +85,7 @@ public class PageRepo : IPageRepo
             else
                 _logger.LogDebug("Already Exists {Page} in dictionary", page.PageID);
         }
-        
+
         _logger.LogDebug("Updating {Page} pages", updatedPageDict.Count());
         var batchCtx = await _ctxFactory.CreateDbContextAsync();
         dbPageDict = await batchCtx.Pages
@@ -97,7 +97,7 @@ public class PageRepo : IPageRepo
         if (dbPageDict.Count != updatedPageDict.Count)
         {
             _logger.LogWarning("Page count mismatch, 1 or more pages didn't exist in the database...");
-            _logger.LogDebug("Updated Page count: {UpdatedCount}, Database Page count: {DatabaseCount}", 
+            _logger.LogDebug("Updated Page count: {UpdatedCount}, Database Page count: {DatabaseCount}",
                 dbPageDict.Count, updatedPageDict.Count);
         }
 
@@ -107,13 +107,13 @@ public class PageRepo : IPageRepo
             var updatedPage = updatedPageDict[kvp.Key];
 
             bool contentChanged = false;
-            
+
             // Page
-            if (updatedPage.LastCrawled != null &&  updatedPage.LastCrawled != dbPage.LastCrawled)
+            if (updatedPage.LastCrawled != null && updatedPage.LastCrawled != dbPage.LastCrawled)
                 dbPage.LastCrawled = updatedPage.LastCrawled;
             if (updatedPage.LastCrawlAttempt != null && updatedPage.LastCrawlAttempt != dbPage.LastCrawlAttempt)
                 dbPage.LastCrawlAttempt = updatedPage.LastCrawlAttempt;
-            
+
             // Content
             if (dbPage.Content != null)
             {
@@ -133,17 +133,17 @@ public class PageRepo : IPageRepo
             {
                 _logger.LogWarning("Content is null for PageID {PageID}", dbPage.PageID);
             }
-            
+
             if (contentChanged == true)
                 dbPage.Content.NeedsEmbedding = true;
         }
-        
+
         var bulkConfig = new BulkConfig
         {
             PreserveInsertOrder = true,
             SetOutputIdentity = false,
         };
-        
+
         await batchCtx.BulkUpdateAsync(dbPageDict.Values, bulkConfig);
         await batchCtx.SaveChangesAsync();
     }
@@ -152,21 +152,30 @@ public class PageRepo : IPageRepo
     {
         throw new NotImplementedException();
     }
-    public Task BatchDeletePageAsync(IEnumerable<Page> pages)
-    {
-        throw new NotImplementedException();
-    }
-    
+
     public async Task SaveChangesAsync(bool clearCtxOnSave = true)
     {
         if (!_ctx.ChangeTracker.AutoDetectChangesEnabled)
             _ctx.ChangeTracker.DetectChanges();
-        
+
         await _ctx.SaveChangesAsync();
-        
+
         if (clearCtxOnSave)
             _ctx.ChangeTracker.Clear(); // Avoid possible memleak from loaded entities.
     }
+
+    public bool ToggleChangeTracker()
+    {
+        _ctx.ChangeTracker.AutoDetectChangesEnabled = !_ctx.ChangeTracker.AutoDetectChangesEnabled;
+
+        return _ctx.ChangeTracker.AutoDetectChangesEnabled;
+    }
+
+    public Task BatchDeletePageAsync(IEnumerable<Page> pages)
+    {
+        throw new NotImplementedException();
+    }
+
     #region Helpers
 
     async Task<Page?> FindOrCreatePage(Page page, SearchEngineCtx ctx)
@@ -176,11 +185,11 @@ public class PageRepo : IPageRepo
             _logger.LogError($"Invalid url: {page.Url} on page {page.Content?.Title}");
             return null;
         }
-        
+
         var pageHost = pageUri.Host;
         var site = ctx.FindOrCreate(
             s => s.Host == pageHost,
-            () => new Website (pageHost));
+            () => new Website(pageHost));
 
         var sitemap = ctx.FindOrCreate(
             sm => sm.Location == site.Host,
@@ -189,9 +198,10 @@ public class PageRepo : IPageRepo
 
         var resPage = ctx.FindOrCreate(
             rp => (rp.Url.Location == pageUri.ToString() && rp.Website == site),
-            () => new Page {Url = page.Url, Content = new Content(), Website = site});
-        
+            () => new Page { Url = page.Url, Content = new Content(), Website = site });
+
         return resPage;
     }
+
     #endregion
 }
