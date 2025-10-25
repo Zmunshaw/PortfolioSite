@@ -50,7 +50,7 @@ public class AIService : IAIService
 
     public async Task<Vector> GetSearchVector(string query)
     {
-        return new Vector(await _aiClient.GetEmbeddingAsync(GetPrompt("Search", query)));
+        return new Vector(await _aiClient.GetEmbeddingAsync(GetPrompt("search result", query)));
     }
 
     string GetPromptEmbedding(string title, string text)
