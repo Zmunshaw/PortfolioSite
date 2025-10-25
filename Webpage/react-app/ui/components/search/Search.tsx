@@ -33,8 +33,8 @@ const Search: React.FC = () => {
             }
 
             const data = await response.json();
-
-            const formattedResults: SearchResultType[] = data.results.map((item: SearchResultType) => ({
+            console.log(data);
+            const formattedResults: SearchResultType[] = data.results.$values.map((item: SearchResultType) => ({
                 id: item.id,
                 title: item.title,
                 url: item.url,
