@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Pgvector;
 using SiteBackend.Middleware.AIClient;
 using SiteBackend.Models.SearchEngine.Index;
@@ -34,18 +33,17 @@ public class AIService : IAIService
     public async Task<List<TextEmbedding>> EmbedDocumentAsync(string title, string[][] wordChunks)
     {
         _logger.LogDebug($"Embedding chunk count: {wordChunks.Length}");
-        ConcurrentBag<TextEmbedding> results = new();
-        // TODO: add ctoken
-        await Parallel.ForEachAsync(wordChunks, new ParallelOptions { MaxDegreeOfParallelism = 4 },
-            async (chunk, token) =>
-            {
-                var wordChunk = string.Join(" ", chunk);
-                var embeddingVector = await GetEmbeddingAsync(title, wordChunk);
-                var emb = new TextEmbedding(wordChunk, new Vector(embeddingVector));
-                results.Add(emb);
-            });
+        List<TextEmbedding> results = new();
+        // TODO: add ctoke
+        foreach (var chunk in wordChunks)
+        {
+            var wordChunk = string.Join(" ", chunk);
+            var embeddingVector = await GetEmbeddingAsync(title, wordChunk);
+            var emb = new TextEmbedding(wordChunk, new Vector(embeddingVector));
+            results.Add(emb);
+        }
 
-        return results.ToList();
+        return results;
     }
 
     public async Task<Vector> GetSearchVector(string query)
@@ -56,7 +54,6 @@ public class AIService : IAIService
     string GetPromptEmbedding(string title, string text)
     {
         string prompt = GetPrompt($"{{title |{title}}}", $"text: {text}");
-        _logger.LogDebug("Prompt generated: {prompt}", prompt);
         return prompt;
     }
 

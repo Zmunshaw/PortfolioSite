@@ -15,6 +15,7 @@ public class EmbeddingManager : BackgroundService
     private readonly IDictionaryRepo _dictionaryRepo;
     private readonly ILogger<EmbeddingManager> _logger;
     SHA256 _hasher = SHA256.Create();
+    private int currentPage;
 
     public EmbeddingManager(IServiceScopeFactory scopeFactory)
     {
@@ -33,11 +34,9 @@ public class EmbeddingManager : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            // Your long-running background task logic goes here
-            _logger.LogInformation("Performing background task...");
             if (updatePageEmbeddingTask == null || updatePageEmbeddingTask.IsCompletedSuccessfully)
             {
-                updatePageEmbeddingTask = Task.Run(async () => await UpdatePageEmbeddings());
+                updatePageEmbeddingTask = UpdatePageEmbeddings();
             }
             else if (updatePageEmbeddingTask != null && updatePageEmbeddingTask.IsFaulted)
             {
@@ -53,8 +52,19 @@ public class EmbeddingManager : BackgroundService
             {
                 _logger.LogDebug("Updating page embedding task was null...");
 
-                updatePageEmbeddingTask = Task.Run(() => UpdatePageEmbeddings());
+                updatePageEmbeddingTask = UpdatePageEmbeddings();
             }
+
+            if (updatePageEmbeddingTask != null && !updatePageEmbeddingTask.IsCompleted)
+                try
+                {
+                    await updatePageEmbeddingTask;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex,
+                        "Exception while waiting for page embedding task to complete during shutdown");
+                }
 
             await Task.Delay(TimeSpan.FromMilliseconds(500), stoppingToken);
         }
@@ -62,10 +72,10 @@ public class EmbeddingManager : BackgroundService
 
     async Task UpdatePageEmbeddings()
     {
+        var pagesPerRequest = 25;
         IEnumerable<Content> updateList = await _contentRepo
-            .GetContentsAsync(ct => ct.NeedsEmbedding && !string.IsNullOrEmpty(ct.Text), 50);
-        var enumerable = updateList as Content[] ?? updateList.ToArray();
-
+            .GetContentsAsync(ct => ct.NeedsEmbedding && !string.IsNullOrEmpty(ct.Text), pagesPerRequest, currentPage);
+        var enumerable = updateList.ToArray();
         _logger.LogDebug("Found {ContentCount} pages that need new embeddings", enumerable.Length);
 
         foreach (var content in enumerable)
@@ -82,6 +92,7 @@ public class EmbeddingManager : BackgroundService
             content.ContentHash = ComputeContentHash(content.Text);
         }
 
+        currentPage += updateList.Count();
         await _contentRepo.BatchUpdateContentAsync(updateList);
     }
 
@@ -103,6 +114,7 @@ public class EmbeddingManager : BackgroundService
         for (int i = 0; i < chunkCount; i++)
         {
             chunks[i] = wordArray.Skip(i * ChunkSize).Take(ChunkSize).ToArray();
+            _logger.LogDebug($"Chunk {i}: {string.Join(", ", chunks[i])}");
         }
 
         return chunks;

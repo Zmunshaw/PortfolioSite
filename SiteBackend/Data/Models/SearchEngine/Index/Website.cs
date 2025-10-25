@@ -100,5 +100,6 @@ public class TextEmbedding
     public string? EmbeddingHash { get; set; }
     public string? RawText { get; set; }
 
+
     [Column(TypeName = "vector(768)")] public Vector? Embedding { get; set; }
 }
