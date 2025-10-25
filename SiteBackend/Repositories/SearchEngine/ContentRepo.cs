@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
+using Pgvector;
+using Pgvector.EntityFrameworkCore;
 using SiteBackend.Database;
 using SiteBackend.Models.SearchEngine.Index;
 
@@ -90,5 +92,22 @@ public class ContentRepo : IContentRepo
     public Task SaveChangesAsync(bool clearCtxOnSave = true)
     {
         throw new NotImplementedException();
+    }
+
+    public async Task<IEnumerable<TextEmbedding>> GetSimilarEmbeddingsAsync(
+        Vector queryVector,
+        int limit = 25,
+        double? maxDistance = null)
+    {
+        await using var ctx = await _ctxFactory.CreateDbContextAsync();
+
+        var query = ctx.TextEmbeddings
+            .OrderBy(te => te.Embedding.CosineDistance(queryVector))
+            .Take(limit);
+
+        if (maxDistance.HasValue)
+            query = query.Where(te => te.Embedding.CosineDistance(queryVector) <= maxDistance.Value);
+
+        return await query.ToListAsync();
     }
 }

@@ -9,10 +9,10 @@ public interface IWebsiteRepo
     Task<Website?> GetByHostNameAsync(string hostName);
     Task AddWebsiteAsync(Website website);
     Task AddSitemapAsync(Sitemap sitemap);
-    
+
     void UpdateWebsite(Website website);
     void UpdateSitemap(Sitemap sitemap);
-    
+
     void DeleteWebsite(Website website);
     void DeleteSitemap(Sitemap sitemap);
     Task<bool> SaveChangesAsync();

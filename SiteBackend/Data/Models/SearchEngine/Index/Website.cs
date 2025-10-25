@@ -1,15 +1,14 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Data.Entity;
 using Pgvector;
-using SiteBackend.Database;
-using SiteBackend.DTO;
 
 namespace SiteBackend.Models.SearchEngine.Index;
 
 public class Website
 {
-    public Website() {}
+    public Website()
+    {
+    }
 
     public Website(string host, Sitemap? sitemap = null, List<Page>? pages = null)
     {
@@ -17,10 +16,9 @@ public class Website
         Pages = pages ?? [new Page(host, this)];
         Sitemap = sitemap ?? new Sitemap(this, host, Pages.Select(pg => pg.Url).ToList());
     }
-    
-    [Key]
-    public int WebsiteID { get; set; }
-    
+
+    [Key] public int WebsiteID { get; set; }
+
     public Sitemap Sitemap { get; set; }
     public string Host { get; set; }
 
@@ -29,7 +27,9 @@ public class Website
 
 public class Page
 {
-    public Page() {}
+    public Page()
+    {
+    }
 
     public Page(string url, Website website, Content? content = null)
     {
@@ -37,21 +37,25 @@ public class Page
         Content = content ?? new(this, "", "");
         Url = new(url, website.Sitemap, this);
     }
-    
-    [Key]
-    public int PageID { get; set; }
+
+    [Key] public int PageID { get; set; }
+
     public Url Url { get; set; }
     public Content Content { get; set; }
-    
-    public DateTime? LastCrawlAttempt {get; set;}
+
+    public DateTime? LastCrawlAttempt { get; set; }
+
     public DateTime? LastCrawled { get; set; }
+
     // FKs
     public Website Website { get; set; }
 }
 
 public class Content
 {
-    public Content() {}
+    public Content()
+    {
+    }
 
     public Content(Page page, string? title = null, string? text = null)
     {
@@ -59,18 +63,17 @@ public class Content
         Title = title;
         Text = text;
     }
-    
-    [Key]
-    public int ContentID { get; set; }
+
+    [Key] public int ContentID { get; set; }
+
     public Page Page { get; set; }
-    
-    [MaxLength(1024)]
-    public string? Title { get; set; }
-    
+
+    [MaxLength(1024)] public string? Title { get; set; }
+
     // (2 * MaxLength)Bytes I think (26ish mb assuming 25 * 1024 * 1024)
     // assumption being that C# chars and pg chars are equal
-    [MaxLength(25 * 1024 * 1024)]
-    public string? Text { get; set; }
+    [MaxLength(25 * 1024 * 1024)] public string? Text { get; set; }
+
     public string? ContentHash { get; set; }
 
     public List<TextEmbedding> Embeddings { get; set; } = new();
@@ -82,20 +85,20 @@ public class Content
 /// </summary>
 public class TextEmbedding
 {
-    public TextEmbedding() {}
-    
+    public TextEmbedding()
+    {
+    }
+
     public TextEmbedding(string text, Vector embedding)
     {
         RawText = text;
         Embedding = embedding;
     }
-    
-    [Key]
-    public int TextEmbeddingID { get; set; }
-    
+
+    [Key] public int TextEmbeddingID { get; set; }
+
     public string? EmbeddingHash { get; set; }
     public string? RawText { get; set; }
-    
-    [Column(TypeName = "vector(768)")]
-    public Vector? Embedding { get; set; }
+
+    [Column(TypeName = "vector(768)")] public Vector? Embedding { get; set; }
 }

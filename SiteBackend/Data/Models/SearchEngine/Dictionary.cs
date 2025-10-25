@@ -6,13 +6,11 @@ namespace SiteBackend.Models.SearchEngine;
 
 public class Word
 {
-    [Key]
-    public int WordID  { get; set; }
+    [Key] public int WordID { get; set; }
 
-    public string Text  { get; set; }
-    
+    public string Text { get; set; }
+
     // TODO: This should be a sparse vector
     // For pgVector embeddings
-    [Column(TypeName = "vector(3)")]
-    public SparseVector? Embedding { get; set; }
+    [Column(TypeName = "vector(3)")] public SparseVector? Embedding { get; set; }
 }

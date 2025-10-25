@@ -1,6 +1,5 @@
 using SiteBackend.Models.SearchEngine.Index;
 using SiteBackend.Repositories.SearchEngine;
-using SiteBackend.Models.SearchEngine.Index;
 
 namespace SiteBackend.Services;
 
@@ -8,8 +7,8 @@ public class SitemapService : ISitemapService
 {
     ILogger<SitemapService> _logger;
     private IWebsiteRepo _repo;
-    
-    public SitemapService(ILogger<SitemapService> logger,  IWebsiteRepo repo)
+
+    public SitemapService(ILogger<SitemapService> logger, IWebsiteRepo repo)
     {
         _repo = repo;
         _logger = logger;

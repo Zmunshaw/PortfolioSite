@@ -1,11 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
-using SiteBackend.Database;
 using SiteBackend.Data.SeedData;
+using SiteBackend.Database;
 using SiteBackend.Middleware.AIClient;
 using SiteBackend.Repositories.SearchEngine;
 using SiteBackend.Services;
+using SiteBackend.Services.Controllers;
 using SiteBackend.Singletons;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,7 +47,8 @@ void AddServices(WebApplicationBuilder bldr)
     bldr.Services.AddScoped<IAIService, AIService>();
     bldr.Services.AddScoped<ISitemapService, SitemapService>();
     bldr.Services.AddScoped<ICrawlerService, CrawlerService>();
-    bldr.Services.AddHostedService<EmbeddingManager>(); 
+    bldr.Services.AddScoped<ISearchService, SearchService>();
+    bldr.Services.AddHostedService<EmbeddingManager>();
 }
 
 void AddRepositories(WebApplicationBuilder bldr)
@@ -84,20 +86,20 @@ void AddCORS(WebApplicationBuilder bldr)
 void BuildDev(WebApplicationBuilder bldr)
 {
     Console.WriteLine($"Environment: {bldr.Environment.EnvironmentName} Initializing...");
-    
+
     if (bldr.Environment.IsDevelopment())
     {
         using var scope = bldr.Services.BuildServiceProvider().CreateScope();
         var dbCtx = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SearchEngineCtx>>().CreateDbContext();
-        
+
         LoadSeedData.SeedDatabase(dbCtx);
     }
     else
     {
-        for(int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
             Console.WriteLine("You should probably fill in the logic production");
         throw new Exception("You should probably fill in the logic production environment.....");
     }
-    
+
     Console.WriteLine($"Environment: {bldr.Environment.EnvironmentName} Initialized");
 }
