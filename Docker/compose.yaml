@@ -3,10 +3,26 @@ name: SiteDevStack
 services:
   backend-dotnet:
     image: site-backend
+    restart: always
     build:
       context: .
       dockerfile: DevSiteBackend/Dockerfile
       
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: always
+    entrypoint: cloudflared
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - "${CLOUDFLARED_TOKEN}"
+    env_file:
+      - .real.env
+    networks:
+      - tunnel-net
  ## Databases
   ## For site-specific functionality (e.g., Blog Posts, Sign In, API Data, etc.)
   site-db:
@@ -83,6 +99,8 @@ services:
 networks:
   ollama-docker:
     external: false
+  tunnel-net:
+    driver: bridge
 
 volumes:
   ai_data:

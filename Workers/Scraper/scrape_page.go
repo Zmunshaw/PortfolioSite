@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"regexp"
 	"strings"
@@ -25,14 +26,49 @@ func GetPage(c *colly.Collector, scrapeTarget DTOCrawlRequest) {
 func SetupCollector(dataChan chan *DTOCrawlerData) *colly.Collector {
 	c := colly.NewCollector()
 
+	c.WithTransport(&http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   3 * time.Second, // Timeout for establishing a connection
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       100 * time.Second, // Timeout for idle connections
+		TLSHandshakeTimeout:   10 * time.Second,  // Timeout for TLS handshake
+		ExpectContinueTimeout: 1 * time.Second,
+	})
+
 	c.Limit(&colly.LimitRule{
 		DomainGlob:  "*", // Apply to all domains
 		Parallelism: Parallelism,
 	})
 
+	c.OnRequest(func(r *colly.Request) {
+		for key, value := range CrawlerHeaders {
+			r.Headers.Set(key, value)
+		}
+	})
+
 	c.OnResponse(func(r *colly.Response) {
 		if r.StatusCode == http.StatusOK {
 			fmt.Printf("Scraping page %s\n", r.Request.URL)
+
+			bodyStr := string(r.Body)
+			blockingKeywords := []string{
+				"captcha",
+				"access denied",
+				"blocked",
+				"too many requests",
+				"rate limit",
+				"suspicious activity",
+			}
+
+			for _, keyword := range blockingKeywords {
+				if strings.Contains(strings.ToLower(bodyStr), strings.ToLower(keyword)) {
+					fmt.Printf("Blocked on %s by %s\n", r.Request.URL.String(), keyword)
+					r.Request.Abort()
+				}
+			}
 		} else {
 			r.Request.Abort()
 		}
@@ -45,7 +81,7 @@ func SetupCollector(dataChan chan *DTOCrawlerData) *colly.Collector {
 		e.Response.Ctx.Put("title", sanitizeText(e.Text))
 	})
 
-	c.OnHTML("main, article, [role='main']", func(e *colly.HTMLElement) {
+	c.OnHTML("h1, h2, h3, h4, p", func(e *colly.HTMLElement) {
 		// Remove script, style, nav, footer, aside
 		e.DOM.Find("script, style, nav, footer, aside, header, code").Remove()
 		if e.Text == "" {
