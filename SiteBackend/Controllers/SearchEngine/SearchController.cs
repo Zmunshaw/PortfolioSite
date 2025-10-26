@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using SiteBackend.Models.SearchEngine;
 using SiteBackend.Services.Controllers;
@@ -14,22 +15,27 @@ public class SearchController(ISearchService searchService, ILogger<SearchContro
         [FromQuery] int limit = 25,
         [FromQuery] string? site = null)
     {
-        var thing = await searchService.GetResults(q);
+        var foundResults = await searchService.GetResults(q);
         List<SearchResult> results = new();
         // Simulate creating a list of results up to maxResults
-        for (var i = 0; i < thing.ProximalEmbeddings.Count; i++)
+        for (var i = 0; i < foundResults.ProximalEmbeddings.Count; i++)
         {
+            var resTitle = foundResults.ProximalEmbeddings[i].Content?.Title;
+            var resLink = foundResults.ProximalEmbeddings[i].Content?.Page.Url.Location;
+            var resSnippet = string.Join(" ", foundResults.ProximalEmbeddings[i].Content?.Text.Split(' ').Take(30));
             results.Add(new SearchResult
             {
-                Id = 1.ToString(),
-                Title = $"Result {i} for '{q}'" + (site != null ? $" on {site}" : ""),
-                Url = $"http://example.com/{i}",
-                Snippet = $"{thing.ProximalEmbeddings[i].RawText}"
+                Id = i.ToString(),
+                Title = resTitle,
+                Url = resLink,
+                Snippet = $"{resSnippet}"
             });
         }
 
         logger.LogInformation($"New search query for '{q}', maxResults: {limit}, site: {site}");
 
-        return Ok(new { results });
+        var resp = Ok(new { results });
+        Console.WriteLine($"Resp: {JsonSerializer.Serialize(resp.Value)}");
+        return resp;
     }
 }

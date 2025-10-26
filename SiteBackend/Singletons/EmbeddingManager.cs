@@ -86,7 +86,10 @@ public class EmbeddingManager : BackgroundService
 
             content.Embeddings = await _aiService.EmbedDocumentAsync(content.Title, wordChunks);
             foreach (var emb in content.Embeddings)
+            {
                 emb.EmbeddingHash = ComputeContentHash(emb.RawText);
+                emb.Content = content;
+            }
 
             _logger.LogDebug($"Hash generated: {content.ContentHash}");
             content.ContentHash = ComputeContentHash(content.Text);

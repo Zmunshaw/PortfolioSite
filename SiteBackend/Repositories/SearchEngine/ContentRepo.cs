@@ -108,6 +108,18 @@ public class ContentRepo : IContentRepo
         if (maxDistance.HasValue)
             query = query.Where(te => te.Embedding.CosineDistance(queryVector) <= maxDistance.Value);
 
-        return await query.ToListAsync();
+        // This feel redundant but EF really doesn't appreciate includes on custom function queries
+        // and the only other alternative is to take the entire table and work back from there
+        var cosineResults = await query.ToListAsync();
+        var ids = cosineResults.Select(cosRes => cosRes.TextEmbeddingID).ToList();
+
+        var inclusiveQuery = await ctx.TextEmbeddings
+            .Where(te => ids.Contains(te.TextEmbeddingID))
+            .Include(te => te.Content)
+            .ThenInclude(ct => ct.Page)
+            .ThenInclude(pg => pg.Url)
+            .ToListAsync();
+
+        return inclusiveQuery;
     }
 }

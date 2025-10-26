@@ -97,6 +97,7 @@ public class TextEmbedding
 
     [Key] public int TextEmbeddingID { get; set; }
 
+    public Content? Content { get; set; }
     public string? EmbeddingHash { get; set; }
     public string? RawText { get; set; }
 
