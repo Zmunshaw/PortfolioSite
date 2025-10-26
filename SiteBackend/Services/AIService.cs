@@ -25,7 +25,7 @@ public class AIService : IAIService
     /// <returns>Float array of embedding values.</returns>
     public async Task<float[]> GetEmbeddingAsync(string title, string text)
     {
-        var result = await _aiClient.GetEmbeddingAsync(GetPromptEmbedding(title, text));
+        var result = await _aiClient.GetDenseEmbeddingAsync(GetPromptEmbedding(title, text));
         _logger.LogDebug($"Embedding result count: {result.Length}");
         return result;
     }
@@ -48,7 +48,7 @@ public class AIService : IAIService
 
     public async Task<Vector> GetSearchVector(string query)
     {
-        return new Vector(await _aiClient.GetEmbeddingAsync(GetPrompt("search result", query)));
+        return new Vector(await _aiClient.GetDenseEmbeddingAsync(GetPrompt("search result", query)));
     }
 
     string GetPromptEmbedding(string title, string text)

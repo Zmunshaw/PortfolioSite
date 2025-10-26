@@ -1,6 +1,3 @@
-using OllamaSharp;
-using OllamaSharp.Models;
-
 namespace SiteBackend.Middleware.AIClient;
 
 // TODO: for now this is local via docker but keep open for cloud workers or something else if it cheaper
@@ -10,18 +7,6 @@ namespace SiteBackend.Middleware.AIClient;
 // JUST SET LIMITS ON COMPUTE COSTS
 public partial class AiClient
 {
-    private async Task InitModel(string model)
-    {
-        var availableModelsEnum = await _ollama.ListLocalModelsAsync();
-        HashSet<Model> availableModels = availableModelsEnum.ToHashSet();
-        
-        if (!availableModels.Any(mdl => mdl.Name.ToLower()
-                .Contains(model.ToLower())))
-        {
-            _ollama.PullModelAsync(model);
-        }
-    }
-    
     /// <summary>
     /// Generates an embedding for a given prompt using the specified embedding model.
     /// Meant for Search Queries AND Page Submissions its just converting string to vector maps and computing vectored
@@ -30,24 +15,30 @@ public partial class AiClient
     /// <param name="text">The text to embed.</param>
     /// <param name="model">The model name, e.g., "nomic-embed-text".</param>
     /// <returns>Float array of embedding values.</returns>
-    public async Task<float[]> GetEmbeddingAsync(string text, string? model = null)
+    public async Task<float[]> GetDenseEmbeddingAsync(string text, string? model = null)
     {
-        if (model == null)
-            _ollama.SelectedModel = _defaultEmbeddingModel;
-        else if (_ollama.SelectedModel != model)
-            _ollama.SelectedModel = model;
-        
         if (string.IsNullOrWhiteSpace(text))
             throw new ArgumentNullException(nameof(text));
 
-        var response = await _ollama.EmbedAsync(text);
+        var response = await _denseClient.GenerateEmbeddingAsync(text);
 
-        if (response?.Embeddings == null || response.Embeddings.Count == 0)
+        if (response?.Value == null)
         {
             throw new Exception("Failed to generate embedding.");
         }
-        
-        Console.WriteLine($"Embedding took {response.LoadDuration / 1000000}ms and consumed {response.PromptEvalCount} tokens.");
-        return response.Embeddings[response.Embeddings.Count - 1];
+
+        return response.Value.ToFloats().ToArray();
+    }
+
+    public async Task<float[]> GetSparseEmbeddingAsync(string text, string? model = null)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            throw new ArgumentNullException(nameof(text));
+
+        var response = await _sparseClient.GenerateEmbeddingAsync(text);
+
+        if (response?.Value == null) throw new Exception("Failed to generate embedding.");
+
+        return response.Value.ToFloats().ToArray();
     }
 }

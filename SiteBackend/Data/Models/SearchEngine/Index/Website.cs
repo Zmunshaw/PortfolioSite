@@ -76,6 +76,7 @@ public class Content
 
     public string? ContentHash { get; set; }
 
+    public List<Word>? Words { get; set; }
     public List<TextEmbedding> Embeddings { get; set; } = new();
     public bool NeedsEmbedding { get; set; } = false;
 }
