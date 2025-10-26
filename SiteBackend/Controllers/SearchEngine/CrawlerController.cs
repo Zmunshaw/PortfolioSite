@@ -8,8 +8,8 @@ namespace SiteBackend.Controllers.SearchEngine;
 [Route("crawler")]
 public class CrawlerController : ControllerBase
 {
+    private readonly ICrawlerService _crawlerService;
     private readonly ILogger<CrawlerController> _logger;
-    private readonly ICrawlerService  _crawlerService;
 
     public CrawlerController(ILogger<CrawlerController> logger, ICrawlerService crawlerService)
     {
@@ -21,10 +21,10 @@ public class CrawlerController : ControllerBase
     [HttpPost("scrape")]
     public async Task<IActionResult> SubmitPages([FromBody] List<DTOCrawlerData> pages)
     {
-        _logger.LogInformation("Submitting pages...");
-        
+        _logger.LogInformation("Recieved page content submissions.....");
+
         await _crawlerService.BatchUpdateCrawlerDataAsync(pages);
-        
+
         return Created("crawler", null);
     }
 

@@ -1,6 +1,5 @@
 using Pgvector;
 using SiteBackend.Middleware.AIClient;
-using SiteBackend.Models.SearchEngine;
 using SiteBackend.Models.SearchEngine.Index;
 
 namespace SiteBackend.Services;
@@ -18,15 +17,6 @@ public class AIService : IAIService
 
     #region Search
 
-    public async Task<List<Word>> EmbedWordsAsync(List<Word> wordsToEmbed)
-    {
-        _logger.LogDebug($"Embeding {wordsToEmbed.Count} words...");
-        foreach (var word in wordsToEmbed)
-            word.Embedding = await GetSparseVectorsAsync(GetSparseEmbeddingPrompt(word.Text));
-
-        return wordsToEmbed.ToList();
-    }
-
     /// <summary>
     ///     Use for generating vectors on a document for
     ///     <see href="https://cohere.com/llmu/what-is-semantic-search">Semantic Search</see>
@@ -40,12 +30,14 @@ public class AIService : IAIService
     {
         _logger.LogDebug($"Embedding chunk count: {wordChunks.Length}");
         List<TextEmbedding> results = new();
-        // TODO: add ctoke
         foreach (var chunk in wordChunks)
         {
             var wordChunk = string.Join(" ", chunk);
-            var embeddingVector = await GetDenseVectorsAsync(GetDenseEmbeddingPrompt(wordChunk));
-            var emb = new TextEmbedding(wordChunk, embeddingVector);
+            var denseVector = await GetDenseVectorsAsync(GetDenseEmbeddingPrompt(wordChunk));
+            var sparseVector = await GetSparseVectorsAsync(GetSparseEmbeddingPrompt(wordChunk));
+            _logger.LogDebug("Dense vector count {denseVectorCount}, sparse vector count {sparseVectorCount}",
+                denseVector.ToArray().Length, sparseVector.ToArray().Length);
+            var emb = new TextEmbedding(wordChunk, denseVector, sparseVector);
             results.Add(emb);
         }
 
@@ -61,26 +53,14 @@ public class AIService : IAIService
     ///     768 floating point vectors that represent the semantic meaning behind that query in the
     ///     form of a pgVector type, it can be unpacked to <see cref="float">float</see>[]
     /// </returns>
-    public async Task<Vector> GetSearchVectorAsync(string query)
+    public async Task<Vector> GetDenseSearchVectorAsync(string query)
     {
         return await GetDenseVectorsAsync(GetDenseSearchPrompt(query));
     }
 
-    public async Task<List<SparseVector>> GetKeywordVectorsAsync(string query)
+    public async Task<SparseVector> GetSparseSearchVectorAsync(string query)
     {
-        _logger.LogDebug($"Getting keyword vectors for {query}");
-        var vectors = new List<SparseVector>();
-        var words = query.Split(' ');
-        List<Task<SparseVector>> embedTasks =
-        [
-            GetSparseVectorsAsync(GetSparseSearchPrompt(query))
-        ];
-        foreach (var word in words)
-            embedTasks.Add(GetSparseVectorsAsync(GetSparseSearchPrompt(query)));
-
-        Task.WaitAll(embedTasks);
-
-        return embedTasks.Select(tk => tk.Result).ToList();
+        return await GetSparseVectorsAsync(GetSparseSearchPrompt(query));
     }
 
     #endregion

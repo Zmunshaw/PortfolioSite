@@ -13,7 +13,10 @@ public interface IContentRepo
     Task<IEnumerable<Content>> GetContentsAsync(Expression<Func<Content, bool>> predicate);
     Task<IEnumerable<Content>> GetContentsAsync(Expression<Func<Content, bool>> predicate, int take, int skip = 0);
 
-    Task<IEnumerable<TextEmbedding>> GetSimilarEmbeddingsAsync(Vector queryVector, int limit = 25,
+    Task<IEnumerable<Page>> GetSimilarSparseEmbeddingsAsync(SparseVector queryVector, int limit = 25,
+        double? maxDistance = null);
+
+    Task<IEnumerable<Page>> GetSimilarDenseEmbeddingsAsync(Vector queryVector, int limit = 25,
         double? maxDistance = null);
 
     Task UpdateContentAsync(Content content);

@@ -12,9 +12,10 @@ public partial class AiClient : IAiClient
 
     #endregion
 
-    public AiClient()
+    public AiClient(ILogger<AiClient> logger)
     {
-        // TODO: appsettings.json this
+        _logger = logger;
+        // TODO: Move to a settings file or smth
         Uri lmStudioUri = new("http://localhost:1122/v1");
         var clientOptions = new OpenAIClientOptions
         {
@@ -39,6 +40,7 @@ public partial class AiClient : IAiClient
     private readonly EmbeddingClient _denseClient;
     private readonly EmbeddingClient _sparseClient;
 
+    // TODO: Move to a settings file or smth
     private readonly string _defaultDenseEmbeddingModel = "text-embedding-granite-embedding-278m-multilingual";
     private readonly string _defaultSparseEmbeddingModel = "text-embedding-splade-v3";
 

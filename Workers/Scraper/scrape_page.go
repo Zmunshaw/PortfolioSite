@@ -47,7 +47,7 @@ func SetupCollector(dataChan chan *DTOCrawlerData) *colly.Collector {
 
 	c.OnHTML("main, article, [role='main']", func(e *colly.HTMLElement) {
 		// Remove script, style, nav, footer, aside
-		e.DOM.Find("script, style, nav, footer, aside, header").Remove()
+		e.DOM.Find("script, style, nav, footer, aside, header, code").Remove()
 		if e.Text == "" {
 			fmt.Println("Content is empty on", e.Request.URL.String())
 		}

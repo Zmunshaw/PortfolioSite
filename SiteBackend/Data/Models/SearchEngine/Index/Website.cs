@@ -90,18 +90,25 @@ public class TextEmbedding
     {
     }
 
-    public TextEmbedding(string text, Vector embedding)
+    public TextEmbedding(string text, Vector denseEmbedding, SparseVector sparseEmbedding)
     {
         RawText = text;
-        Embedding = embedding;
+        DenseEmbedding = denseEmbedding;
+        SparseEmbedding = sparseEmbedding;
     }
 
     [Key] public int TextEmbeddingID { get; set; }
 
     public Content? Content { get; set; }
+
+    // Meta
     public string? EmbeddingHash { get; set; }
     public string? RawText { get; set; }
 
+    // TODO: Move to a settings file or smth
+    // Embeddings
+    [Column(TypeName = "sparsevec")] public SparseVector? SparseEmbedding { get; set; }
 
-    [Column(TypeName = "vector(768)")] public Vector? Embedding { get; set; }
+    // TODO: Move to a settings file or smth
+    [Column(TypeName = "vector(768)")] public Vector? DenseEmbedding { get; set; }
 }

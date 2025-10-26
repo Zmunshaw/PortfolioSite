@@ -23,24 +23,52 @@ public class SearchService : ISearchService
     {
         _logger.LogDebug("Getting results for {query}...", query);
         var searchRequest = new DTOSearchRequest(query);
-        searchRequest.QueryVector = await VectorizeQuery(query);
-        _logger.LogDebug("Getting proximal embedding for {query}...", searchRequest.SearchQuery);
-        searchRequest.ProximalEmbeddings = await GetProximalEmbeddings(searchRequest);
+        (searchRequest.DenseVector, searchRequest.SparseVector) = await VectorizeQuery(query);
+        searchRequest.SearchResults = await GetRankedResults(searchRequest);
         return searchRequest;
     }
 
-    private async Task<Vector> VectorizeQuery(string query)
+    private async Task<(Vector, SparseVector)> VectorizeQuery(string query)
     {
         _logger.LogDebug("Vectorizing query: {query}...", query);
-        return await _aiService.GetSearchVectorAsync(query);
+        var denseTask = _aiService.GetDenseSearchVectorAsync(query);
+        var sparseTask = _aiService.GetSparseSearchVectorAsync(query);
+
+        await Task.WhenAll(denseTask, sparseTask);
+
+        return (denseTask.Result, sparseTask.Result);
     }
 
-    private async Task<List<TextEmbedding>> GetProximalEmbeddings(DTOSearchRequest searchRequest, int topK = 25)
+    // TODO IMPROVE: finding common denominators probably wont result in much
+    private async Task<List<DTOSearchResult>> GetRankedResults(DTOSearchRequest request)
+    {
+        var (sparseRes, denseRes) = await Task.WhenAll
+                (GetProximalSparsePages(request.SparseVector), GetProximalDensePages(request.DenseVector))
+            .ContinueWith(res => (res.Result[0], res.Result[1]));
+
+        _logger.LogDebug("Got {sparseRes} sparse results and {denseRes} dense results.", sparseRes.Count,
+            denseRes.Count);
+        var results = new List<DTOSearchResult>();
+        results.AddRange(denseRes.Select(pg => new DTOSearchResult(pg)));
+        results.AddRange(sparseRes.Select(pg => new DTOSearchResult(pg)));
+
+        return results;
+    }
+
+    private async Task<List<Page>> GetProximalSparsePages(SparseVector vector, int topK = 100)
     {
         _logger.LogDebug("Finding {topK} most similar embeddings...", topK);
 
-        var results = await _contentRepo.GetSimilarEmbeddingsAsync(searchRequest.QueryVector,
-            topK);
+        var results = await _contentRepo.GetSimilarSparseEmbeddingsAsync(vector, topK);
+        var resultsList = results.ToList();
+        _logger.LogDebug("Found {topK} most similar embeddings.", resultsList.Count);
+        return results.ToList();
+    }
+
+    private async Task<List<Page>> GetProximalDensePages(Vector vector, int topK = 100)
+    {
+        _logger.LogDebug("Finding {topK} most similar embeddings...", topK);
+        var results = await _contentRepo.GetSimilarDenseEmbeddingsAsync(vector, topK);
         var resultsList = results.ToList();
         _logger.LogDebug("Found {topK} most similar embeddings.", resultsList.Count);
         return results.ToList();

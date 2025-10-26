@@ -94,32 +94,63 @@ public class ContentRepo : IContentRepo
         throw new NotImplementedException();
     }
 
-    public async Task<IEnumerable<TextEmbedding>> GetSimilarEmbeddingsAsync(
+    public async Task<IEnumerable<Page>> GetSimilarSparseEmbeddingsAsync(
+        SparseVector queryVector,
+        int limit = 25,
+        double? maxDistance = null)
+    {
+        await using var ctx = await _ctxFactory.CreateDbContextAsync();
+
+        var baseQuery = ctx.TextEmbeddings.AsQueryable();
+
+        if (maxDistance.HasValue)
+            baseQuery = baseQuery.Where(te =>
+                te.SparseEmbedding != null && te.SparseEmbedding.L2Distance(queryVector) <= maxDistance.Value);
+
+        var orderedQuery = baseQuery
+            .OrderBy(te => te.SparseEmbedding != null ? te.SparseEmbedding.L2Distance(queryVector) : (double?)null)
+            .Take(limit);
+
+        var embeddingResults = await orderedQuery.ToListAsync();
+        var ids = embeddingResults.Select(e => e.TextEmbeddingID).ToList();
+
+        var pages = await ctx.Pages
+            .Where(pg => pg.Content.Embeddings.Any(emb => ids.Contains(emb.TextEmbeddingID)))
+            .Include(pg => pg.Content)
+            .ThenInclude(ct => ct.Embeddings)
+            .Include(pg => pg.Url)
+            .ToListAsync();
+
+        return pages;
+    }
+
+    public async Task<IEnumerable<Page>> GetSimilarDenseEmbeddingsAsync(
         Vector queryVector,
         int limit = 25,
         double? maxDistance = null)
     {
         await using var ctx = await _ctxFactory.CreateDbContextAsync();
 
-        var query = ctx.TextEmbeddings
-            .OrderBy(te => te.Embedding.CosineDistance(queryVector))
-            .Take(limit);
+        var baseQuery = ctx.TextEmbeddings.AsQueryable();
 
         if (maxDistance.HasValue)
-            query = query.Where(te => te.Embedding.CosineDistance(queryVector) <= maxDistance.Value);
+            baseQuery = baseQuery.Where(te => te.DenseEmbedding != null && te.DenseEmbedding
+                .CosineDistance(queryVector) <= maxDistance);
 
-        // This feel redundant but EF really doesn't appreciate includes on custom function queries
-        // and the only other alternative is to take the entire table and work back from there
-        var cosineResults = await query.ToListAsync();
-        var ids = cosineResults.Select(cosRes => cosRes.TextEmbeddingID).ToList();
+        var orderedQuery = baseQuery
+            .OrderBy(te => te.DenseEmbedding != null ? te.DenseEmbedding.L2Distance(queryVector) : (double?)null)
+            .Take(limit);
 
-        var inclusiveQuery = await ctx.TextEmbeddings
-            .Where(te => ids.Contains(te.TextEmbeddingID))
-            .Include(te => te.Content)
-            .ThenInclude(ct => ct.Page)
-            .ThenInclude(pg => pg.Url)
+        var embeddingResults = await orderedQuery.ToListAsync();
+        var ids = embeddingResults.Select(e => e.TextEmbeddingID).ToList();
+
+        var pages = await ctx.Pages
+            .Where(pg => pg.Content.Embeddings.Any(emb => ids.Contains(emb.TextEmbeddingID)))
+            .Include(pg => pg.Content)
+            .ThenInclude(ct => ct.Embeddings)
+            .Include(pg => pg.Url)
             .ToListAsync();
 
-        return inclusiveQuery;
+        return pages;
     }
 }

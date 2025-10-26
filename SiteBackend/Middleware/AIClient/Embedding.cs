@@ -1,3 +1,5 @@
+using OpenAI.Embeddings;
+
 namespace SiteBackend.Middleware.AIClient;
 
 // TODO: for now this is local via docker but keep open for cloud workers or something else if it cheaper
@@ -35,8 +37,11 @@ public partial class AiClient
         if (string.IsNullOrWhiteSpace(text))
             throw new ArgumentNullException(nameof(text));
 
-        var response = await _sparseClient.GenerateEmbeddingAsync(text);
-
+        var opts = new EmbeddingGenerationOptions
+        {
+            Dimensions = 30522
+        };
+        var response = await _sparseClient.GenerateEmbeddingAsync(text, opts);
         if (response?.Value == null) throw new Exception("Failed to generate embedding.");
 
         return response.Value.ToFloats().ToArray();

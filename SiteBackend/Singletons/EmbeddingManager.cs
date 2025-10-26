@@ -8,8 +8,10 @@ namespace SiteBackend.Singletons;
 
 public class EmbeddingManager : BackgroundService
 {
+    // TODO: Move to a settings file or smth
     private const int MinWordSize = 2;
     private const int ChunkSize = 500;
+
     private readonly IAIService _aiService;
     private readonly IContentRepo _contentRepo;
     private readonly IDictionaryRepo _dictionaryRepo;
@@ -34,41 +36,18 @@ public class EmbeddingManager : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            if (updatePageEmbeddingTask == null || updatePageEmbeddingTask.IsCompletedSuccessfully)
+            if (updatePageEmbeddingTask == null || updatePageEmbeddingTask.IsCompleted)
             {
-                updatePageEmbeddingTask = UpdatePageEmbeddings();
+                if (updatePageEmbeddingTask == null || updatePageEmbeddingTask.IsCompletedSuccessfully)
+                    updatePageEmbeddingTask = UpdatePageEmbeddings();
+                else
+                    _logger.LogWarning(updatePageEmbeddingTask.Exception?.ToString());
+                await Task.Delay(TimeSpan.FromMilliseconds(500), stoppingToken);
             }
-            else if (updatePageEmbeddingTask != null && updatePageEmbeddingTask.IsFaulted)
-            {
-                _logger.LogWarning("Updating page embedding task faulted: {error}", updatePageEmbeddingTask.Exception);
-                updatePageEmbeddingTask = null;
-            }
-            else if (updatePageEmbeddingTask != null && updatePageEmbeddingTask.IsCanceled)
-            {
-                _logger.LogWarning("Updating page embedding task canceled: {error}", updatePageEmbeddingTask.Exception);
-            }
-
-            if (updatePageEmbeddingTask == null)
-            {
-                _logger.LogDebug("Updating page embedding task was null...");
-
-                updatePageEmbeddingTask = UpdatePageEmbeddings();
-            }
-
-            if (updatePageEmbeddingTask != null && !updatePageEmbeddingTask.IsCompleted)
-                try
-                {
-                    await updatePageEmbeddingTask;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex,
-                        "Exception while waiting for page embedding task to complete during shutdown");
-                }
-
-            await Task.Delay(TimeSpan.FromMilliseconds(500), stoppingToken);
         }
     }
+
+    #region Content Embedding
 
     async Task UpdatePageEmbeddings()
     {
@@ -76,22 +55,24 @@ public class EmbeddingManager : BackgroundService
         IEnumerable<Content> updateList = await _contentRepo
             .GetContentsAsync(ct => ct.NeedsEmbedding && !string.IsNullOrEmpty(ct.Text), pagesPerRequest, currentPage);
         var enumerable = updateList.ToArray();
-        _logger.LogDebug("Found {ContentCount} pages that need new embeddings", enumerable.Length);
+        if (enumerable.Length != 0)
+            _logger.LogDebug("Found {ContentCount} pages that need new embeddings", enumerable.Length);
 
         foreach (var content in enumerable)
         {
-            _logger.LogDebug("Fixing Text...");
+            //_logger.LogDebug("Fixing Text...");
             var wordArray = StripInvalidWords(content.Text);
             var wordChunks = ChunkWords(wordArray);
 
             content.Embeddings = await _aiService.EmbedDocumentAsync(wordChunks);
+
             foreach (var emb in content.Embeddings)
             {
                 emb.EmbeddingHash = ComputeContentHash(emb.RawText);
                 emb.Content = content;
             }
 
-            _logger.LogDebug($"Hash generated: {content.ContentHash}");
+            //_logger.LogDebug($"Hash generated: {content.ContentHash}");
             content.ContentHash = ComputeContentHash(content.Text);
         }
 
@@ -117,7 +98,7 @@ public class EmbeddingManager : BackgroundService
         for (int i = 0; i < chunkCount; i++)
         {
             chunks[i] = wordArray.Skip(i * ChunkSize).Take(ChunkSize).ToArray();
-            _logger.LogDebug($"Chunk {i}: {string.Join(", ", chunks[i])}");
+            //_logger.LogDebug($"Chunk {i}: {string.Join(", ", chunks[i])}");
         }
 
         return chunks;
@@ -129,4 +110,6 @@ public class EmbeddingManager : BackgroundService
         var hash = _hasher.ComputeHash(bytes);
         return Convert.ToBase64String(hash);
     }
+
+    #endregion
 }

@@ -17,12 +17,15 @@ public class SearchController(ISearchService searchService, ILogger<SearchContro
     {
         var foundResults = await searchService.GetResults(q);
         List<SearchResult> results = new();
+
         // Simulate creating a list of results up to maxResults
-        for (var i = 0; i < foundResults.ProximalEmbeddings.Count; i++)
+        for (var i = 0; i < foundResults.SearchResults.Count; i++)
         {
-            var resTitle = foundResults.ProximalEmbeddings[i].Content?.Title;
-            var resLink = foundResults.ProximalEmbeddings[i].Content?.Page.Url.Location;
-            var resSnippet = string.Join(" ", foundResults.ProximalEmbeddings[i].Content?.Text.Split(' ').Take(30));
+            var resTitle = foundResults.SearchResults[i].ResultPage.Content.Title;
+            var resLink = foundResults.SearchResults[i].ResultPage.Url.Location;
+            var resSnippet = string
+                .Join(" ", foundResults.SearchResults[i].ResultPage.Content.Text.Split(' ').Take(30));
+
             results.Add(new SearchResult
             {
                 Id = i.ToString(),

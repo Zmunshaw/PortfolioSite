@@ -1,5 +1,4 @@
 using Pgvector;
-using SiteBackend.Models.SearchEngine;
 using SiteBackend.Models.SearchEngine.Index;
 
 namespace SiteBackend.Services;
@@ -15,11 +14,9 @@ public interface IAIService
 
     #region Search
 
-    Task<Vector> GetSearchVectorAsync(string text);
+    Task<Vector> GetDenseSearchVectorAsync(string text);
+    Task<SparseVector> GetSparseSearchVectorAsync(string text);
     Task<List<TextEmbedding>> EmbedDocumentAsync(string[][] wordChunks);
-
-    Task<List<SparseVector>> GetKeywordVectorsAsync(string text);
-    Task<List<Word>> EmbedWordsAsync(List<Word> wordsToEmbed);
 
     #endregion
 }
