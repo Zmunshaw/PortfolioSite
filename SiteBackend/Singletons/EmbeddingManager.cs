@@ -84,7 +84,7 @@ public class EmbeddingManager : BackgroundService
             var wordArray = StripInvalidWords(content.Text);
             var wordChunks = ChunkWords(wordArray);
 
-            content.Embeddings = await _aiService.EmbedDocumentAsync(content.Title, wordChunks);
+            content.Embeddings = await _aiService.EmbedDocumentAsync(wordChunks);
             foreach (var emb in content.Embeddings)
             {
                 emb.EmbeddingHash = ComputeContentHash(emb.RawText);

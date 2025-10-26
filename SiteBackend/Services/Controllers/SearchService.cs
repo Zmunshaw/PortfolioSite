@@ -32,7 +32,7 @@ public class SearchService : ISearchService
     private async Task<Vector> VectorizeQuery(string query)
     {
         _logger.LogDebug("Vectorizing query: {query}...", query);
-        return await _aiService.GetSearchVector(query);
+        return await _aiService.GetSearchVectorAsync(query);
     }
 
     private async Task<List<TextEmbedding>> GetProximalEmbeddings(DTOSearchRequest searchRequest, int topK = 25)

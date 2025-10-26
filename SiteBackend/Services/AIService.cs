@@ -1,5 +1,6 @@
 using Pgvector;
 using SiteBackend.Middleware.AIClient;
+using SiteBackend.Models.SearchEngine;
 using SiteBackend.Models.SearchEngine.Index;
 
 namespace SiteBackend.Services;
@@ -15,19 +16,15 @@ public class AIService : IAIService
         _aiClient = aiClient;
     }
 
-    /// <summary>
-    /// Generates an embedding for a given prompt using the dense embedding model.
-    /// Meant for Page Submissions its just converting string to vector maps and computing vectored
-    /// distances using <see cref="Pgvector"/>'s Cosine, Hamming, Jaccard and L distances.
-    /// </summary>
-    /// <param name="title">Document Title.</param>
-    /// <param name="text">document text.</param>
-    /// <returns>Float array of embedding values.</returns>
-    public async Task<float[]> GetEmbeddingAsync(string title, string text)
+    #region Search
+
+    public async Task<List<Word>> EmbedWordsAsync(List<Word> wordsToEmbed)
     {
-        var result = await _aiClient.GetDenseEmbeddingAsync(GetDenseEmbedding(text));
-        _logger.LogDebug($"Embedding result count: {result.Length}");
-        return result;
+        _logger.LogDebug($"Embeding {wordsToEmbed.Count} words...");
+        foreach (var word in wordsToEmbed)
+            word.Embedding = await GetSparseVectorsAsync(GetSparseEmbeddingPrompt(word.Text));
+
+        return wordsToEmbed.ToList();
     }
 
     /// <summary>
@@ -39,7 +36,7 @@ public class AIService : IAIService
     /// </summary>
     /// <param name="wordChunks">[[Take, a, document], [break, it, into, paragraphs, and, split, the, words]]</param>
     /// <returns></returns>
-    public async Task<List<TextEmbedding>> EmbedDocumentAsync(string title, string[][] wordChunks)
+    public async Task<List<TextEmbedding>> EmbedDocumentAsync(string[][] wordChunks)
     {
         _logger.LogDebug($"Embedding chunk count: {wordChunks.Length}");
         List<TextEmbedding> results = new();
@@ -47,8 +44,8 @@ public class AIService : IAIService
         foreach (var chunk in wordChunks)
         {
             var wordChunk = string.Join(" ", chunk);
-            var embeddingVector = await GetEmbeddingAsync(title, wordChunk);
-            var emb = new TextEmbedding(wordChunk, new Vector(embeddingVector));
+            var embeddingVector = await GetDenseVectorsAsync(GetDenseEmbeddingPrompt(wordChunk));
+            var emb = new TextEmbedding(wordChunk, embeddingVector);
             results.Add(emb);
         }
 
@@ -64,13 +61,48 @@ public class AIService : IAIService
     ///     768 floating point vectors that represent the semantic meaning behind that query in the
     ///     form of a pgVector type, it can be unpacked to <see cref="float">float</see>[]
     /// </returns>
-    public async Task<Vector> GetSearchVector(string query)
+    public async Task<Vector> GetSearchVectorAsync(string query)
     {
-        return new Vector(await _aiClient.GetDenseEmbeddingAsync(GetDenseSearchPrompt(query)));
+        return await GetDenseVectorsAsync(GetDenseSearchPrompt(query));
     }
 
+    public async Task<List<SparseVector>> GetKeywordVectorsAsync(string query)
+    {
+        _logger.LogDebug($"Getting keyword vectors for {query}");
+        var vectors = new List<SparseVector>();
+        var words = query.Split(' ');
+        List<Task<SparseVector>> embedTasks =
+        [
+            GetSparseVectorsAsync(GetSparseSearchPrompt(query))
+        ];
+        foreach (var word in words)
+            embedTasks.Add(GetSparseVectorsAsync(GetSparseSearchPrompt(query)));
+
+        Task.WaitAll(embedTasks);
+
+        return embedTasks.Select(tk => tk.Result).ToList();
+    }
+
+    #endregion
+
+    #region General Purpose
+
+    public async Task<Vector> GetDenseVectorsAsync(string query)
+    {
+        return new Vector(await _aiClient.GetDenseEmbeddingAsync(query));
+    }
+
+    public async Task<SparseVector> GetSparseVectorsAsync(string query)
+    {
+        return new SparseVector(await _aiClient.GetSparseEmbeddingAsync(query));
+    }
+
+    #endregion
+
+    #region Prompts
+
     // TODO: figure out if granite-embedding wants a prompt
-    private string GetDenseEmbedding(string text)
+    private string GetDenseEmbeddingPrompt(string text)
     {
         var prompt = $"{text}";
         return prompt;
@@ -81,4 +113,18 @@ public class AIService : IAIService
     {
         return $"{query}";
     }
+
+    private string GetSparseEmbeddingPrompt(string query)
+    {
+        var prompt = $"{query}";
+        return prompt;
+    }
+
+    private string GetSparseSearchPrompt(string query)
+    {
+        var prompt = $"{query}";
+        return prompt;
+    }
+
+    #endregion
 }
