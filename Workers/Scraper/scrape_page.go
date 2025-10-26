@@ -45,11 +45,19 @@ func SetupCollector(dataChan chan *DTOCrawlerData) *colly.Collector {
 		e.Response.Ctx.Put("title", sanitizeText(e.Text))
 	})
 
-	c.OnHTML("article, div#content, main", func(e *colly.HTMLElement) {
+	c.OnHTML("main, article, [role='main']", func(e *colly.HTMLElement) {
+		// Remove script, style, nav, footer, aside
+		e.DOM.Find("script, style, nav, footer, aside, header").Remove()
 		if e.Text == "" {
 			fmt.Println("Content is empty on", e.Request.URL.String())
 		}
-		e.Response.Ctx.Put("content", sanitizeText(e.Text))
+
+		var currText = e.Response.Ctx.Get("content")
+		if currText != "" {
+			currText += "\n\n" // Add spacing between elements
+		}
+		currText += e.Text
+		e.Response.Ctx.Put("content", currText)
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
