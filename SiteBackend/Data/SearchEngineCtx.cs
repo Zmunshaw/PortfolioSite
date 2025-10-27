@@ -151,10 +151,11 @@ public class SitemapCtxFactory : IDesignTimeDbContextFactory<SearchEngineCtx>
 {
     public SearchEngineCtx CreateDbContext(string[] args)
     {
-        // TODO: get conn string from appsettings.json
         var optionsBuilder = new DbContextOptionsBuilder<SearchEngineCtx>();
         optionsBuilder.UseNpgsql("Host=se-db;Port=5021;Database=postgres;Username=se-master;Password=se-pass",
-            npgsqlOptions => npgsqlOptions.UseVector());
+            npgsqlOptions => npgsqlOptions
+                .UseVector() // for pgVector functions
+                .CommandTimeout(600)); // 10 minutes, alot but its for seeding(dont need in "prod") TODO: fix for prod
 
         return new SearchEngineCtx(optionsBuilder.Options, null);
     }

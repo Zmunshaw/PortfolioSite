@@ -92,7 +92,8 @@ void BuildDev(WebApplicationBuilder bldr)
         using var scope = bldr.Services.BuildServiceProvider().CreateScope();
         var dbCtx = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SearchEngineCtx>>().CreateDbContext();
 
-        LoadSeedData.SeedDatabase(dbCtx);
+        var seedTask = Task.Run(() => LoadSeedData.SeedDatabase(dbCtx)); // This should run on seperate thread
+        Task.WaitAll(seedTask);
     }
     else
     {

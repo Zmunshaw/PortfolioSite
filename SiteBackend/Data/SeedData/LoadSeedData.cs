@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-using System.Diagnostics;
 using EFCore.BulkExtensions;
 using SiteBackend.Database;
 using SiteBackend.Models.SearchEngine;
@@ -9,11 +7,13 @@ namespace SiteBackend.Data.SeedData;
 
 public static class LoadSeedData
 {
-    // TODO: not this.
-    private static readonly string SiteSeedPath = "/app/data/seed.csv";
-    private static readonly string WordSeedPath = "/app/data/words.txt";
+    private static readonly string SiteSeedPath = Environment
+        .GetEnvironmentVariable("SITE_SEED_PATH") ?? "/app/data/seed.csv";
 
-    public static void SeedDatabase(SearchEngineCtx dbCtx, bool isDevelopment = true)
+    private static readonly string WordSeedPath = Environment
+        .GetEnvironmentVariable("WORD_SEED_PATH") ?? "/app/data/words.txt";
+
+    public static async Task SeedDatabase(SearchEngineCtx dbCtx, bool isDevelopment = true)
     {
         List<string[]> sites = [];
         string[] words = new string[] { };
@@ -44,37 +44,17 @@ public static class LoadSeedData
             Console.WriteLine($"An error occurred: {ex.Message}");
         }
 
-        var websites = new ConcurrentBag<Website>();
-        var dictionary = new ConcurrentBag<Word>();
-        Parallel.Invoke(
-            () =>
-            {
-                Parallel.ForEach(sites, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
-                    site =>
-                    {
-                        string trimmedUrl = site[1].Trim('"');
-                        var newSite = new Website(trimmedUrl);
-                        if (Uri.TryCreate(trimmedUrl, UriKind.RelativeOrAbsolute, out Uri _))
-                            websites.Add(newSite);
-                        else
-                            Console.WriteLine($"Site {trimmedUrl} could not be parsed into a valid URL.");
-
-                        Debug.Assert(newSite.Sitemap != null, "sitemap null...");
-                    });
-            },
-            () =>
-            {
-                Parallel.ForEach(words, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
-                    word => { dictionary.Add(new Word { Text = word }); });
-            }
-        );
+        var websites = sites.AsParallel()
+            .Select(site => new Website(site[1].Trim('"'))).ToList();
+        var dictionary = words.AsParallel()
+            .Select(word => new Word { Text = word }).ToList();
 
 
         var bulkConfig = new BulkConfig
         {
             PreserveInsertOrder = false,
             SetOutputIdentity = false,
-            BatchSize = 5000,
+            BatchSize = 250000,
             BulkCopyTimeout = 0,
             EnableStreaming = true,
             TrackingEntities = false,
@@ -84,12 +64,9 @@ public static class LoadSeedData
 
         dbCtx.Database.EnsureCreated();
         Console.WriteLine($"Inserting {dictionary.Count} Words...");
-        bulkConfig.BatchSize = 50000;
-        dbCtx.BulkInsert(dictionary, bulkConfig);
-        dbCtx.SaveChanges();
+        await dbCtx.BulkInsertAsync(dictionary, bulkConfig);
         Console.WriteLine($"Inserting {websites.Count} Websites...");
-        bulkConfig.BatchSize = 50000;
-        dbCtx.BulkInsert(websites, bulkConfig);
+        await dbCtx.BulkInsertAsync(websites, bulkConfig);
 
         Console.WriteLine($"Saving {websites.Count + dictionary.Count} Seed Items...");
         dbCtx.SaveChanges();
