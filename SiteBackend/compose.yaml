@@ -1,0 +1,70 @@
+﻿## WIP
+name: SiteDevStack
+services:
+  backend-dotnet:
+    image: site-backend
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./Data/SeedData:/app/data
+    networks:
+      - tunnel-net
+      - db-net
+  
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: always
+    entrypoint: cloudflared
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - ${CLOUDFLARED_TOKEN}
+    networks:
+      - tunnel-net
+  ## Databases
+  ## For site-specific functionality (e.g., Blog Posts, Sign In, API Data, etc.)
+  site-db:
+    image: postgres:latest
+    container_name: site-db
+    restart: always
+    command: -p ${SITE_PORT}
+    ports:
+      - ${SITE_PORT}:${SITE_PORT}
+    environment:
+      POSTGRES_DB: ${SITE_DB_NAME}
+      POSTGRES_USER: ${SITE_DB_USER}
+      POSTGRES_PASSWORD: ${SITE_DB_PASS}
+    volumes:
+      - site_db:/var/lib/postgresql/data
+  ## For search engine functionality (e.g., VectorPG, Websites, Sitemaps Etc)
+  se-db:
+    image: pgvector/pgvector:pg16
+    container_name: se-db
+    restart: always
+    command: -p ${SE_PORT}
+    ports:
+      - ${SE_PORT}:${SE_PORT}
+    environment:
+      POSTGRES_DB: ${SE_DB_NAME}
+      POSTGRES_USER: ${SE_DB_USER}
+      POSTGRES_PASSWORD: ${SE_DB_PASS}
+    volumes:
+      - se_db:/var/lib/postgresql/data
+    networks:
+      - db-net
+
+networks:
+  tunnel-net:
+    driver: bridge
+  db-net:
+    driver: bridge
+
+volumes:
+  ai_data:
+  site_db:
+  se_db:

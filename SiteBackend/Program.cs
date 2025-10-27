@@ -36,7 +36,7 @@ app.Run();
 void AddDatabases(WebApplicationBuilder bldr)
 {
     bldr.Services.AddDbContextFactory<SearchEngineCtx>(options =>
-        options.UseNpgsql(("Host=localhost;Port=5433;Database=dev-db;Username=pg-dev;Password=dev-pw"),
+        options.UseNpgsql("Host=se-db;Port=5021;Database=postgres;Username=se-master;Password=se-pass",
             npgsqlOptions => npgsqlOptions.UseVector())
     );
 }

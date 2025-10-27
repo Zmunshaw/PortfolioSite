@@ -153,7 +153,7 @@ public class SitemapCtxFactory : IDesignTimeDbContextFactory<SearchEngineCtx>
     {
         // TODO: get conn string from appsettings.json
         var optionsBuilder = new DbContextOptionsBuilder<SearchEngineCtx>();
-        optionsBuilder.UseNpgsql("Host=localhost;Port=5433;Database=dev-db;Username=pg-dev;Password=dev-pw",
+        optionsBuilder.UseNpgsql("Host=se-db;Port=5021;Database=postgres;Username=se-master;Password=se-pass",
             npgsqlOptions => npgsqlOptions.UseVector());
 
         return new SearchEngineCtx(optionsBuilder.Options, null);
