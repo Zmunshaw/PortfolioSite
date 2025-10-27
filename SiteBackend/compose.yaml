@@ -9,6 +9,9 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./Data/SeedData:/app/data
+    ports:
+      - ${BE_PORT1}:${BE_PORT1}
+      - ${BE_PORT2}:${BE_PORT2}
     networks:
       - tunnel-net
       - db-net
