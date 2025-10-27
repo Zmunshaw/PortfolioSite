@@ -7,11 +7,8 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      SE_DB_HOST: ${SE_DB_HOST}
-      SE_DB_PORT: ${SE_DB_PORT}
-      SE_DB_NAME: ${SE_DB_NAME}
-      SE_DB_USER: ${SE_DB_USER}
-      SE_DB_PASS: ${SE_DB_PASS}
+      SE_DB_CONN: Host="${SE_PROD_DB_HOST}";Port="${SE_PROD_DB_PORT}";Database="${SE_PROD_DB_NAME}";Username="${SE_PROD_DB_USER}";Password="${SE_PROD_DB_PASS}"
+      ASPNETCORE_ENVIRONMENT: Production
     volumes:
       - ./Data/SeedData:/app/data
     ports:
@@ -32,7 +29,7 @@ services:
       - --no-autoupdate
       - run
       - --token
-      - ${CLOUDFLARED_TOKEN}
+      - ${CLOUDFLARED_PROD_TOKEN}
     networks:
       - zm-prod-tunnel-net
   ## Databases
@@ -40,41 +37,32 @@ services:
     image: postgres:latest
     container_name: site-db
     restart: always
-    command: -p ${SITE_PORT}
+    command: -p ${SITE_PROD_DB_PORT}
     ports:
-      - ${SITE_PORT}:${SITE_PORT}
+      - ${SITE_PROD_DB_PORT}:${SITE_PROD_DB_PORT}
     environment:
-      POSTGRES_DB: ${SITE_DB_NAME}
-      POSTGRES_USER: ${SITE_DB_USER}
-      POSTGRES_PASSWORD: ${SITE_DB_PASS}
+      POSTGRES_DB: ${SITE_PROD_DB_NAME}
+      POSTGRES_USER: ${SITE_PROD_DB_USER}
+      POSTGRES_PASSWORD: ${SITE_PROD_DB_PASS}
     volumes:
-      - site_db:/var/lib/postgresql/data
+      - PROD-site-db:/var/lib/postgresql/data
     networks:
-      - db-net
+      - zm-prod-db-net
   se-db:
     image: pgvector/pgvector:pg16
     container_name: se-db
     restart: always
-    command: -p ${SE_PORT}
+    command: -p ${SE_PROD_DB_PORT}
     ports:
-      - ${SE_PORT}:${SE_PORT}
+      - ${SE_PROD_DB_PORT}:${SE_PROD_DB_PORT}
     environment:
-      POSTGRES_DB: ${SE_DB_NAME}
-      POSTGRES_USER: ${SE_DB_USER}
-      POSTGRES_PASSWORD: ${SE_DB_PASS}
+      POSTGRES_DB: ${SE_PROD_DB_NAME}
+      POSTGRES_USER: ${SE_PROD_DB_USER}
+      POSTGRES_PASSWORD: ${SE_PROD_DB_PASS}
     volumes:
-      - se_db:/var/lib/postgresql/data
+      - PROD-se-db:/var/lib/postgresql/data
     networks:
-      - db-net
-  site-cache:
-    image: redis:6.2-alpine
-    restart: always
-    ports:
-      - '6379:6379'
-    command:
-      - redis-server --save 20 1 --loglevel warning --requirepass ${CACHE_PASS}
-    volumes:
-      - PROD_cache:/data
+      - zm-prod-db-net
 
 networks:
   zm-prod-tunnel-net:
@@ -85,7 +73,6 @@ networks:
     driver: bridge
 
 volumes:
-  PROD_ai-data:
-  PROD_site-db:
-  PROD_se-db:
-  PROD_cache:
+  PROD-site-db:
+  PROD-se-db:
+  PROD-cache:

@@ -1,0 +1,78 @@
+﻿name: DEV_SiteStack
+services:
+  zacharymunshaw-dev:
+    image: site-backend
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SE_DB_CONN: "host=${SE_DEV_DB_HOST};port=${SE_DEV_DB_PORT};database=${SE_DEV_DB_NAME};username=${SE_DEV_DB_USER};password=${SE_DEV_DB_PASS};"
+      ASPNETCORE_ENVIRONMENT: Development
+    volumes:
+      - ./Data/SeedData:/app/data
+    ports:
+      - ${BE_PORT1}:${BE_PORT1}
+      - ${BE_PORT2}:${BE_PORT2}
+    networks:
+      - zm-dev-tunnel-net
+      - zm-dev-db-net
+      - zm-dev-cache-net
+  
+  cloudflared-dev:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: always
+    entrypoint: cloudflared
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - ${CLOUDFLARED_DEV_TOKEN}
+    networks:
+      - zm-dev-tunnel-net
+  ## Databases
+  site-db-dev:
+    image: postgres:latest
+    container_name: site-db
+    restart: always
+    command: -p ${SITE_DEV_DB_PORT}
+    ports:
+      - ${SITE_DEV_DB_PORT}:${SITE_DEV_DB_PORT}
+    environment:
+      POSTGRES_DB: ${SITE_DEV_DB_NAME}
+      POSTGRES_USER: ${SITE_DEV_DB_USER}
+      POSTGRES_PASSWORD: ${SITE_DEV_DB_PASS}
+    volumes:
+      - DEV-site-db:/var/lib/postgresql/data
+    networks:
+      - zm-dev-db-net
+  se-db-dev:
+    image: pgvector/pgvector:pg16
+    container_name: se-db
+    restart: always
+    command: -p ${SE_DEV_DB_PORT}
+    ports:
+      - ${SE_DEV_DB_PORT}:${SE_DEV_DB_PORT}
+    environment:
+      POSTGRES_DB: ${SE_DEV_DB_NAME}
+      POSTGRES_USER: ${SE_DEV_DB_USER}
+      POSTGRES_PASSWORD: ${SE_DEV_DB_PASS}
+    volumes:
+      - DEV-se-db:/var/lib/postgresql/data
+    networks:
+      - zm-dev-db-net
+
+networks:
+  zm-dev-tunnel-net:
+    driver: bridge
+  zm-dev-db-net:
+    driver: bridge
+  zm-dev-cache-net:
+    driver: bridge
+
+volumes:
+  DEV-site-db:
+  DEV-se-db:
+  DEV-cache:

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using SiteBackend.Configs;
 using SiteBackend.Data.SeedData;
 using SiteBackend.Database;
 using SiteBackend.Middleware.AIClient;
@@ -12,6 +13,7 @@ using SiteBackend.Singletons;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+AddConfigs(builder);
 AddDatabases(builder);
 AddRepositories(builder);
 AddServices(builder);
@@ -35,23 +37,17 @@ app.Run();
 
 void AddDatabases(WebApplicationBuilder bldr)
 {
-    // TODO: All ENVARS should be 1. easy to find 2. close in proximity to eachother.
-    var SE_DB_HOST = Environment
-        .GetEnvironmentVariable("SE_HOST") ?? "se-dev";
-    var SE_DB_PORT = Environment
-        .GetEnvironmentVariable("SE_PORT") ?? "5021";
-    var SE_DB_NAME = Environment
-        .GetEnvironmentVariable("SE_DATABASE") ?? "se_dev_db";
-    var SE_DB_USER = Environment
-        .GetEnvironmentVariable("SE_USER") ?? "se-dev-user";
-    var SE_DB_PASS = Environment
-        .GetEnvironmentVariable("SE_PASS") ?? "se-dev-pass";
+    var connectionString = Environment.GetEnvironmentVariable("SE_DB_CONN");
 
     bldr.Services.AddDbContextFactory<SearchEngineCtx>(options =>
-        options.UseNpgsql($"Host={SE_DB_HOST};Port={SE_DB_PORT};Database={SE_DB_NAME};" +
-                          $"Username={SE_DB_USER};Password={SE_DB_PASS}",
+        options.UseNpgsql(connectionString,
             npgsqlOptions => npgsqlOptions.UseVector())
     );
+}
+
+void AddConfigs(WebApplicationBuilder bldr)
+{
+    bldr.Services.AddScoped<IDataSettings, DataSettings>();
 }
 
 void AddServices(WebApplicationBuilder bldr)
@@ -106,7 +102,7 @@ void BuildDev(WebApplicationBuilder bldr)
     {
         using var scope = bldr.Services.BuildServiceProvider().CreateScope();
         var dbCtx = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SearchEngineCtx>>().CreateDbContext();
-
+        dbCtx.Database.Migrate();
         var seedTask = Task.Run(() => LoadSeedData.SeedDatabase(dbCtx)); // This should run on seperate thread
         Task.WaitAll(seedTask);
     }

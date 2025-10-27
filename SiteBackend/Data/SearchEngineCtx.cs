@@ -1,14 +1,49 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using SiteBackend.Configs;
 using SiteBackend.Models.SearchEngine;
 using SiteBackend.Models.SearchEngine.Index;
 
 namespace SiteBackend.Database;
 
-public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<SearchEngineCtx> logger)
-    : DbContext(options)
+public class SearchEngineCtx(
+    DbContextOptions<SearchEngineCtx> options,
+    ILogger<SearchEngineCtx> logger,
+    IDataSettings dataSettings,
+    bool designTime = false) : DbContext(options)
 {
+    #region DB Helper Methods
+
+    /// <summary>
+    ///     Quick and dirty way to make sure an entity exists within the db, while also trying to find it.
+    /// </summary>
+    /// <param name="predicate">
+    ///     Search params
+    ///     <code>page => page.Url == example.com</code>
+    /// </param>
+    /// <param name="createEntity">
+    ///     Function for creation
+    ///     <code>someVar => new TEntity { TVal1 = someVar.val1, TVal2 = someVar.Val2}</code>
+    /// </param>
+    /// <returns>If no predicate exists it creates one, otherwise it returns the first or default from db</returns>
+    /// <remarks>Won't save any changes it makes, that's up to you, champ.</remarks>
+    public TEntity FindOrCreate<TEntity>(Expression<Func<TEntity, bool>> predicate, Func<TEntity> createEntity)
+        where TEntity : class
+    {
+        var entity = Set<TEntity>().FirstOrDefault(predicate);
+        if (entity != null) return entity;
+
+        logger.LogDebug("no entity found, creating new {Name}.", typeof(TEntity).Name);
+        entity = createEntity();
+        Set<TEntity>().Add(entity);
+        return entity;
+    }
+
+    #endregion
+
+    #region DBSets
+
     // Sitemap
     public DbSet<Sitemap> Sitemaps { get; set; }
     public DbSet<Sitemap> SitemapIndexes { get; set; }
@@ -27,7 +62,22 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
     public DbSet<TextEmbedding> TextEmbeddings { get; set; }
     public DbSet<Word> Words { get; set; }
 
+    #endregion
+
     #region DB Model Rules
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {
+        var dbconn = dataSettings.SEDBConn;
+        logger.LogDebug("Creating search engine DBCTX from ctx. {conn}", dbconn);
+
+        if (designTime) return;
+
+        var optionsBuilder = new DbContextOptionsBuilder<SearchEngineCtx>();
+        optionsBuilder.UseNpgsql(dbconn,
+            npgsqlOptions => npgsqlOptions
+                .UseVector());
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -118,45 +168,20 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
     }
 
     #endregion
-
-    #region DB Helper Methods
-
-    /// <summary>
-    /// Quick and dirty way to make sure an entity exists within the db, while also trying to find it.
-    /// </summary>
-    /// <param name="predicate">Search params
-    /// <code>page => page.Url == example.com</code>
-    /// </param>
-    /// <param name="createEntity">Function for creation
-    /// <code>someVar => new TEntity { TVal1 = someVar.val1, TVal2 = someVar.Val2}</code>
-    /// </param>
-    /// <returns>If no predicate exists it creates one, otherwise it returns the first or default from db</returns>
-    /// <remarks>Won't save any changes it makes, that's up to you, champ.</remarks>
-    public TEntity FindOrCreate<TEntity>(Expression<Func<TEntity, bool>> predicate, Func<TEntity> createEntity)
-        where TEntity : class
-    {
-        var entity = Set<TEntity>().FirstOrDefault(predicate);
-        if (entity != null) return entity;
-
-        logger.LogDebug("no entity found, creating new {Name}.", typeof(TEntity).Name);
-        entity = createEntity();
-        Set<TEntity>().Add(entity);
-        return entity;
-    }
-
-    #endregion
 }
 
-public class SitemapCtxFactory : IDesignTimeDbContextFactory<SearchEngineCtx>
+public class SearchEngineCtxDesignTimeFactory : IDesignTimeDbContextFactory<SearchEngineCtx>
 {
     public SearchEngineCtx CreateDbContext(string[] args)
     {
+        // Dev
+        var connectionString =
+            "host=localhost;port=1288;database=se-dev-db;username=se-dev-master;password=se-dev-pass;";
+        DataSettings stuff = new(new Logger<DataSettings>(new LoggerFactory()), null);
         var optionsBuilder = new DbContextOptionsBuilder<SearchEngineCtx>();
-        optionsBuilder.UseNpgsql("Host=se-db;Port=5021;Database=postgres;Username=se-master;Password=se-pass",
-            npgsqlOptions => npgsqlOptions
-                .UseVector() // for pgVector functions
-                .CommandTimeout(600)); // 10 minutes, alot but its for seeding(dont need in "prod") TODO: fix for prod
+        optionsBuilder.UseNpgsql(connectionString,
+            npgsqlOptions => npgsqlOptions.UseVector());
 
-        return new SearchEngineCtx(optionsBuilder.Options, null);
+        return new SearchEngineCtx(optionsBuilder.Options, new Logger<SearchEngineCtx>(new LoggerFactory()), stuff);
     }
 }

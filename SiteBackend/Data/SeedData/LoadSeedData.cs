@@ -1,4 +1,5 @@
 using EFCore.BulkExtensions;
+using Microsoft.EntityFrameworkCore;
 using SiteBackend.Database;
 using SiteBackend.Models.SearchEngine;
 using SiteBackend.Models.SearchEngine.Index;
@@ -13,8 +14,11 @@ public static class LoadSeedData
     private static readonly string WordSeedPath = Environment
         .GetEnvironmentVariable("WORD_SEED_PATH") ?? "/app/data/words.txt";
 
+
     public static async Task SeedDatabase(SearchEngineCtx dbCtx, bool isDevelopment = true)
     {
+        var cstr = Environment.GetEnvironmentVariable("SE_DB_CONN");
+        Console.WriteLine($"DEBUG: Connection string = '{cstr}'");
         List<string[]> sites = [];
         string[] words = new string[] { };
 
@@ -68,7 +72,8 @@ public static class LoadSeedData
             IncludeGraph = true,
         };
 
-        dbCtx.Database.EnsureCreated();
+
+        Console.WriteLine($"Actual Conn STR {dbCtx.Database.GetConnectionString()}");
         Console.WriteLine($"Inserting {dictionary.Count} Words...");
         await dbCtx.BulkInsertAsync(dictionary, bulkConfig);
         Console.WriteLine($"Inserting {websites.Count} Websites...");
