@@ -46,6 +46,12 @@ public static class LoadSeedData
 
         var websites = sites.AsParallel()
             .Select(site => new Website(site[1].Trim('"'))).ToList();
+        var chunkSize = (int)Math.Ceiling(websites.Count / 200f);
+        var websiteLists = websites
+            .Select((website, index) => new { website, index })
+            .GroupBy(x => x.index / chunkSize)
+            .Select(g => g.Select(x => x.website).ToList())
+            .ToList();
         var dictionary = words.AsParallel()
             .Select(word => new Word { Text = word }).ToList();
 
@@ -66,7 +72,22 @@ public static class LoadSeedData
         Console.WriteLine($"Inserting {dictionary.Count} Words...");
         await dbCtx.BulkInsertAsync(dictionary, bulkConfig);
         Console.WriteLine($"Inserting {websites.Count} Websites...");
-        await dbCtx.BulkInsertAsync(websites, bulkConfig);
+
+        // TODO: make all these hard-coded vars consts or smnthng
+        var cntr = 200;
+        foreach (var chunk in websiteLists)
+        {
+            await dbCtx.BulkInsertAsync(chunk, bulkConfig);
+            cntr--;
+            Console.WriteLine($"Inserted {chunk.Count} Websites {cntr} chunks to go!...");
+
+            if (cntr % 10 == 0)
+            {
+                Console.WriteLine("Checkpoint reached, saving...");
+                await dbCtx.SaveChangesAsync();
+                Console.WriteLine($"{chunk.Count * 10} websites committed to the DB...");
+            }
+        }
 
         Console.WriteLine($"Saving {websites.Count + dictionary.Count} Seed Items...");
         dbCtx.SaveChanges();
