@@ -1,20 +1,26 @@
-﻿## WIP
-name: SiteDevStack
+﻿name: PROD_SiteStack
 services:
-  backend-dotnet:
+  zacharymunshaw-dev:
     image: site-backend
     restart: always
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      SE_DB_HOST: ${SE_DB_HOST}
+      SE_DB_PORT: ${SE_DB_PORT}
+      SE_DB_NAME: ${SE_DB_NAME}
+      SE_DB_USER: ${SE_DB_USER}
+      SE_DB_PASS: ${SE_DB_PASS}
     volumes:
       - ./Data/SeedData:/app/data
     ports:
       - ${BE_PORT1}:${BE_PORT1}
       - ${BE_PORT2}:${BE_PORT2}
     networks:
-      - tunnel-net
-      - db-net
+      - zm-prod-tunnel-net
+      - zm-prod-db-net
+      - zm-prod-cache-net
   
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -28,9 +34,8 @@ services:
       - --token
       - ${CLOUDFLARED_TOKEN}
     networks:
-      - tunnel-net
+      - zm-prod-tunnel-net
   ## Databases
-  ## For site-specific functionality (e.g., Blog Posts, Sign In, API Data, etc.)
   site-db:
     image: postgres:latest
     container_name: site-db
@@ -44,7 +49,8 @@ services:
       POSTGRES_PASSWORD: ${SITE_DB_PASS}
     volumes:
       - site_db:/var/lib/postgresql/data
-  ## For search engine functionality (e.g., VectorPG, Websites, Sitemaps Etc)
+    networks:
+      - db-net
   se-db:
     image: pgvector/pgvector:pg16
     container_name: se-db
@@ -60,14 +66,26 @@ services:
       - se_db:/var/lib/postgresql/data
     networks:
       - db-net
+  site-cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command:
+      - redis-server --save 20 1 --loglevel warning --requirepass ${CACHE_PASS}
+    volumes:
+      - PROD_cache:/data
 
 networks:
-  tunnel-net:
+  zm-prod-tunnel-net:
     driver: bridge
-  db-net:
+  zm-prod-db-net:
+    driver: bridge
+  zm-prod-cache-net:
     driver: bridge
 
 volumes:
-  ai_data:
-  site_db:
-  se_db:
+  PROD_ai-data:
+  PROD_site-db:
+  PROD_se-db:
+  PROD_cache:

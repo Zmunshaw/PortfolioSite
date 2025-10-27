@@ -35,8 +35,21 @@ app.Run();
 
 void AddDatabases(WebApplicationBuilder bldr)
 {
+    // TODO: All ENVARS should be 1. easy to find 2. close in proximity to eachother.
+    var SE_DB_HOST = Environment
+        .GetEnvironmentVariable("SE_HOST") ?? "se-dev";
+    var SE_DB_PORT = Environment
+        .GetEnvironmentVariable("SE_PORT") ?? "5021";
+    var SE_DB_NAME = Environment
+        .GetEnvironmentVariable("SE_DATABASE") ?? "se_dev_db";
+    var SE_DB_USER = Environment
+        .GetEnvironmentVariable("SE_USER") ?? "se-dev-user";
+    var SE_DB_PASS = Environment
+        .GetEnvironmentVariable("SE_PASS") ?? "se-dev-pass";
+
     bldr.Services.AddDbContextFactory<SearchEngineCtx>(options =>
-        options.UseNpgsql("Host=se-db;Port=5021;Database=postgres;Username=se-master;Password=se-pass",
+        options.UseNpgsql($"Host={SE_DB_HOST};Port={SE_DB_PORT};Database={SE_DB_NAME};" +
+                          $"Username={SE_DB_USER};Password={SE_DB_PASS}",
             npgsqlOptions => npgsqlOptions.UseVector())
     );
 }
@@ -76,6 +89,8 @@ void AddCORS(WebApplicationBuilder bldr)
     {
         options.AddPolicy("AllowAll", policy =>
         {
+            policy.WithOrigins("http://api.zacharymunshaw.dev", "https://api.zacharymunshaw.dev",
+                "http://zacharymunshaw.dev", "https://zacharymunshaw.dev");
             policy.AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader();
