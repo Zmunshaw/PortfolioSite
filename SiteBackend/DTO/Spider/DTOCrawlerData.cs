@@ -4,8 +4,10 @@ namespace SiteBackend.DTO;
 
 public class DTOCrawlerData
 {
-    public DTOCrawlerData () {}
-    
+    public DTOCrawlerData()
+    {
+    }
+
     public DTOCrawlerData(Page page)
     {
         PageID = page.PageID;
@@ -14,15 +16,15 @@ public class DTOCrawlerData
         Text = page.Content.Text;
         CrawledAt = page.LastCrawled;
     }
-    
+
     public int PageID { get; set; }
-    
+
     public string PageUrl { get; set; }
     public string? Title { get; set; }
     public string? Text { get; set; }
-    
+
     public DateTime? CrawledAt { get; set; }
-    
+
     public Page ConvertToPage()
     {
         var convertedPage = new Page

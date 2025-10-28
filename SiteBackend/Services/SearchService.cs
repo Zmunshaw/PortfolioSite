@@ -42,20 +42,36 @@ public class SearchService : ISearchService
     // TODO IMPROVE: finding common denominators probably wont result in much
     private async Task<List<DTOSearchResult>> GetRankedResults(DTOSearchRequest request)
     {
-        var (sparseRes, denseRes) = await Task.WhenAll
-                (GetProximalSparsePages(request.SparseVector), GetProximalDensePages(request.DenseVector))
+        var (sparseRes, denseRes) = await Task.WhenAll(
+                GetProximalSparsePages(request.SparseVector),
+                GetProximalDensePages(request.DenseVector)
+            )
             .ContinueWith(res => (res.Result[0], res.Result[1]));
 
-        _logger.LogDebug("Got {sparseRes} sparse results and {denseRes} dense results.", sparseRes.Count,
-            denseRes.Count);
-        var results = new List<DTOSearchResult>();
-        results.AddRange(denseRes.Select(pg => new DTOSearchResult(pg)));
-        results.AddRange(sparseRes.Select(pg => new DTOSearchResult(pg)));
+        _logger.LogDebug("Got {sparseRes} sparse results and {denseRes} dense results.",
+            sparseRes.Count, denseRes.Count);
 
-        return results;
+        var denseSet = denseRes.ToHashSet(); // Assuming Id uniqueness
+        var results = new List<DTOSearchResult>();
+
+        var reranked = sparseRes
+            .Where(pg => denseSet.Contains(pg))
+            .Select(pg => new DTOSearchResult(pg))
+            .ToList();
+        results.AddRange(reranked);
+
+        results.AddRange(sparseRes
+            .Where(pg => !denseSet.Contains(pg))
+            .Select(pg => new DTOSearchResult(pg)));
+
+        results.AddRange(denseRes
+            .Where(pg => !sparseRes.Select(s => s).Contains(pg))
+            .Select(pg => new DTOSearchResult(pg)));
+
+        return results.Take(20).ToList();
     }
 
-    private async Task<List<Page>> GetProximalSparsePages(SparseVector vector, int topK = 100)
+    private async Task<List<Page>> GetProximalSparsePages(SparseVector vector, int topK = 25)
     {
         _logger.LogDebug("Finding {topK} most similar embeddings...", topK);
 
@@ -65,7 +81,7 @@ public class SearchService : ISearchService
         return results.ToList();
     }
 
-    private async Task<List<Page>> GetProximalDensePages(Vector vector, int topK = 100)
+    private async Task<List<Page>> GetProximalDensePages(Vector vector, int topK = 25)
     {
         _logger.LogDebug("Finding {topK} most similar embeddings...", topK);
         var results = await _contentRepo.GetSimilarDenseEmbeddingsAsync(vector, topK);

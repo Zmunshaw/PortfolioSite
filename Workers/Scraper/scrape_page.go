@@ -81,16 +81,15 @@ func SetupCollector(dataChan chan *DTOCrawlerData) *colly.Collector {
 		e.Response.Ctx.Put("title", sanitizeText(e.Text))
 	})
 
-	c.OnHTML("h1, h2, h3, h4, p", func(e *colly.HTMLElement) {
-		// Remove script, style, nav, footer, aside
-		e.DOM.Find("script, style, nav, footer, aside, header, code").Remove()
+	c.OnHTML("main, body", func(e *colly.HTMLElement) {
+		e.DOM.Find("script, style, nav, footer, aside, header, code, button, [role='button']").Remove()
 		if e.Text == "" {
 			fmt.Println("Content is empty on", e.Request.URL.String())
 		}
 
 		var currText = e.Response.Ctx.Get("content")
 		if currText != "" {
-			currText += "\n\n" // Add spacing between elements
+			currText += "\n"
 		}
 		currText += e.Text
 		e.Response.Ctx.Put("content", currText)
@@ -122,6 +121,7 @@ func SetupCollector(dataChan chan *DTOCrawlerData) *colly.Collector {
 }
 
 func sanitizeText(text string) string {
+	fmt.Println("sanitizing text:", text)
 	htmlRegEx := regexp.MustCompile("<(.*?)>")
 	whitespaceRegEx := regexp.MustCompile(`\s+`) // \s+ apparently means whitespace chars e.g., "\r", " ", "\n", etc
 
