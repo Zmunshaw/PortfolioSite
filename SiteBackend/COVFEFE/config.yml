@@ -1,0 +1,8 @@
+tunnel: my-backend
+credentials-file: /etc/cloudflared/cred.json
+
+ingress:
+  - hostname: backend.zacharymunshaw.dev
+    path: ingest
+    service: http://backend:2125
+  - service: http_status:404

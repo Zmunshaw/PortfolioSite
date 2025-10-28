@@ -98,7 +98,6 @@ public class EmbeddingManager : BackgroundService
         for (int i = 0; i < chunkCount; i++)
         {
             chunks[i] = wordArray.Skip(i * ChunkSize).Take(ChunkSize).ToArray();
-            //_logger.LogDebug($"Chunk {i}: {string.Join(", ", chunks[i])}");
         }
 
         return chunks;

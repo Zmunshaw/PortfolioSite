@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
-using SiteBackend.Configs;
 using SiteBackend.Data.SeedData;
 using SiteBackend.Database;
 using SiteBackend.Middleware.AIClient;
@@ -12,8 +11,8 @@ using SiteBackend.Singletons;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.UseUrls("http://0.0.0.0:2125");
 // Add services to the container.
-AddConfigs(builder);
 AddDatabases(builder);
 AddRepositories(builder);
 AddServices(builder);
@@ -43,11 +42,6 @@ void AddDatabases(WebApplicationBuilder bldr)
         options.UseNpgsql(connectionString,
             npgsqlOptions => npgsqlOptions.UseVector())
     );
-}
-
-void AddConfigs(WebApplicationBuilder bldr)
-{
-    bldr.Services.AddScoped<IDataSettings, DataSettings>();
 }
 
 void AddServices(WebApplicationBuilder bldr)
@@ -85,8 +79,6 @@ void AddCORS(WebApplicationBuilder bldr)
     {
         options.AddPolicy("AllowAll", policy =>
         {
-            policy.WithOrigins("http://api.zacharymunshaw.dev", "https://api.zacharymunshaw.dev",
-                "http://zacharymunshaw.dev", "https://zacharymunshaw.dev");
             policy.AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader();
@@ -98,20 +90,11 @@ void BuildDev(WebApplicationBuilder bldr)
 {
     Console.WriteLine($"Environment: {bldr.Environment.EnvironmentName} Initializing...");
 
-    if (bldr.Environment.IsDevelopment())
-    {
-        using var scope = bldr.Services.BuildServiceProvider().CreateScope();
-        var dbCtx = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SearchEngineCtx>>().CreateDbContext();
-        dbCtx.Database.Migrate();
-        var seedTask = Task.Run(() => LoadSeedData.SeedDatabase(dbCtx)); // This should run on seperate thread
-        Task.WaitAll(seedTask);
-    }
-    else
-    {
-        for (var i = 0; i < 20; i++)
-            Console.WriteLine("You should probably fill in the logic production");
-        throw new Exception("You should probably fill in the logic production environment.....");
-    }
+    using var scope = bldr.Services.BuildServiceProvider().CreateScope();
+    var dbCtx = scope.ServiceProvider.GetRequiredService<SearchEngineCtx>();
+    var seedTask = Task.Run(() => LoadSeedData.SeedDatabase(dbCtx)); // This should run on seperate thread
+    Task.WaitAll(seedTask);
+
 
     Console.WriteLine($"Environment: {bldr.Environment.EnvironmentName} Initialized");
 }

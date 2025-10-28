@@ -8,7 +8,9 @@ services:
       dockerfile: Dockerfile
     environment:
       SE_DB_CONN: "host=${SE_DEV_DB_HOST};port=${SE_DEV_DB_PORT};database=${SE_DEV_DB_NAME};username=${SE_DEV_DB_USER};password=${SE_DEV_DB_PASS};"
+      SAFE_MODE: false
       ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://0.0.0.0:2125
     volumes:
       - ./Data/SeedData:/app/data
     ports:
@@ -32,6 +34,8 @@ services:
       - ${CLOUDFLARED_DEV_TOKEN}
     networks:
       - zm-dev-tunnel-net
+    volumes:
+      - ./COVFEFE/config.yml:/etc/cloudflared/config.yml:ro
   ## Databases
   site-db-dev:
     image: postgres:latest

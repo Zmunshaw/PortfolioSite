@@ -16,7 +16,7 @@ public partial class AiClient : IAiClient
     {
         _logger = logger;
         // TODO: Move to a settings file or smth
-        Uri lmStudioUri = new("http://localhost:1122/v1");
+        Uri lmStudioUri = new("http://172.17.0.1:1122/v1");
         var clientOptions = new OpenAIClientOptions
         {
             Endpoint = lmStudioUri

@@ -1,17 +1,13 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using SiteBackend.Configs;
 using SiteBackend.Models.SearchEngine;
 using SiteBackend.Models.SearchEngine.Index;
 
 namespace SiteBackend.Database;
 
-public class SearchEngineCtx(
-    DbContextOptions<SearchEngineCtx> options,
-    ILogger<SearchEngineCtx> logger,
-    IDataSettings dataSettings,
-    bool designTime = false) : DbContext(options)
+public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<SearchEngineCtx> logger)
+    : DbContext(options)
 {
     #region DB Helper Methods
 
@@ -68,10 +64,7 @@ public class SearchEngineCtx(
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
-        var dbconn = dataSettings.SEDBConn;
-        logger.LogDebug("Creating search engine DBCTX from ctx. {conn}", dbconn);
-
-        if (designTime) return;
+        var dbconn = Environment.GetEnvironmentVariable("SE_DB_CONN") ?? "FUCK";
 
         var optionsBuilder = new DbContextOptionsBuilder<SearchEngineCtx>();
         optionsBuilder.UseNpgsql(dbconn,
@@ -174,14 +167,17 @@ public class SearchEngineCtxDesignTimeFactory : IDesignTimeDbContextFactory<Sear
 {
     public SearchEngineCtx CreateDbContext(string[] args)
     {
-        // Dev
+        // TODO: Fix this
         var connectionString =
             "host=localhost;port=1288;database=se-dev-db;username=se-dev-master;password=se-dev-pass;";
-        DataSettings stuff = new(new Logger<DataSettings>(new LoggerFactory()), null);
+        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
+            connectionString =
+                "host=localhost;port=5021;database=se-prod-db;username=se-prod-master;password=se-prod-pass;";
+
         var optionsBuilder = new DbContextOptionsBuilder<SearchEngineCtx>();
         optionsBuilder.UseNpgsql(connectionString,
             npgsqlOptions => npgsqlOptions.UseVector());
 
-        return new SearchEngineCtx(optionsBuilder.Options, new Logger<SearchEngineCtx>(new LoggerFactory()), stuff);
+        return new SearchEngineCtx(optionsBuilder.Options, new Logger<SearchEngineCtx>(new LoggerFactory()));
     }
 }
