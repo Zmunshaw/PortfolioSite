@@ -8,12 +8,13 @@ services:
       dockerfile: Dockerfile
     environment:
       SE_DB_CONN: "host=${SE_PROD_DB_HOST};port=${SE_PROD_DB_PORT};database=${SE_PROD_DB_NAME};username=${SE_PROD_DB_USER};password=${SE_PROD_DB_PASS};"
+      SITE_DB_CONN: "host=${SITE_PROD_DB_HOST};port=${SITE_PROD_DB_PORT};database=${SITE_PROD_DB_NAME};username=${SITE_PROD_DB_USER};password=${SITE_PROD_DB_PASS};"
       ASPNETCORE_ENVIRONMENT: Production
+      API_PORT: ${PORT_PORT}
     volumes:
       - ./Data/SeedData:/app/data
     ports:
-      - 6969:${BE_PORT1}
-      - 6767:${BE_PORT2}
+      - ${PROD_PORT}:${PROD_PORT}
     networks:
       - zm-prod-tunnel-net
       - zm-prod-db-net

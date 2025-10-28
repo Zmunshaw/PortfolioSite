@@ -8,14 +8,14 @@ services:
       dockerfile: Dockerfile
     environment:
       SE_DB_CONN: "host=${SE_DEV_DB_HOST};port=${SE_DEV_DB_PORT};database=${SE_DEV_DB_NAME};username=${SE_DEV_DB_USER};password=${SE_DEV_DB_PASS};"
+      SITE_DB_CONN: "host=${SITE_DEV_DB_HOST};port=${SITE_DEV_DB_PORT};database=${SITE_DEV_DB_NAME};username=${SITE_DEV_DB_USER};password=${SITE_DEV_DB_PASS};"
       SAFE_MODE: false
       ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: http://0.0.0.0:2125
+      API_PORT: ${DEV_PORT}
     volumes:
       - ./Data/SeedData:/app/data
     ports:
-      - ${BE_PORT1}:${BE_PORT1}
-      - ${BE_PORT2}:${BE_PORT2}
+      - ${DEV_PORT}:${DEV_PORT}
     networks:
       - zm-dev-tunnel-net
       - zm-dev-db-net
