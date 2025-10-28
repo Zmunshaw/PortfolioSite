@@ -34,8 +34,6 @@ services:
       - ${CLOUDFLARED_DEV_TOKEN}
     networks:
       - zm-dev-tunnel-net
-    volumes:
-      - ./COVFEFE/config.yml:/etc/cloudflared/config.yml:ro
   ## Databases
   site-db-dev:
     image: postgres:latest
