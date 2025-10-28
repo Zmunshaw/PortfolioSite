@@ -9,7 +9,7 @@ public class DTOCrawlRequest
         PageID = page.PageID;
         Url = page.Url.Location;
     }
-    
+
     public int PageID { get; set; }
     public string Url { get; set; }
 }

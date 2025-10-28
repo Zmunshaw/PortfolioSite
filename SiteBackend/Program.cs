@@ -11,13 +11,25 @@ using SiteBackend.Singletons;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://0.0.0.0:2125");
-// Add services to the container.
+// API
+var API_PORT = Environment.GetEnvironmentVariable("API_PORT");
+
+// Databases
+var SEARCH_ENGINE_DB_CONN = Environment.GetEnvironmentVariable("SE_DB_CONN");
+var SITE_DB_CONN = Environment.GetEnvironmentVariable("SITE_DB_CONN");
+
+// State
+var IsDevelopment = builder.Environment.EnvironmentName == "Development";
+
+// URLs
+builder.WebHost.UseUrls($"http://0.0.0.0:{API_PORT}");
+
+// Services.
+AddCORS(builder);
 AddDatabases(builder);
 AddRepositories(builder);
 AddServices(builder);
 AddControllers(builder);
-AddCORS(builder);
 BuildDev(builder);
 builder.Services.AddEndpointsApiExplorer();
 
@@ -36,10 +48,8 @@ app.Run();
 
 void AddDatabases(WebApplicationBuilder bldr)
 {
-    var connectionString = Environment.GetEnvironmentVariable("SE_DB_CONN");
-
     bldr.Services.AddDbContextFactory<SearchEngineCtx>(options =>
-        options.UseNpgsql(connectionString,
+        options.UseNpgsql(SEARCH_ENGINE_DB_CONN,
             npgsqlOptions => npgsqlOptions.UseVector())
     );
 }
@@ -89,12 +99,9 @@ void AddCORS(WebApplicationBuilder bldr)
 void BuildDev(WebApplicationBuilder bldr)
 {
     Console.WriteLine($"Environment: {bldr.Environment.EnvironmentName} Initializing...");
-
     using var scope = bldr.Services.BuildServiceProvider().CreateScope();
     var dbCtx = scope.ServiceProvider.GetRequiredService<SearchEngineCtx>();
     var seedTask = Task.Run(() => LoadSeedData.SeedDatabase(dbCtx)); // This should run on seperate thread
     Task.WaitAll(seedTask);
-
-
     Console.WriteLine($"Environment: {bldr.Environment.EnvironmentName} Initialized");
 }

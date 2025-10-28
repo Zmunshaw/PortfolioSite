@@ -35,8 +35,8 @@ public class AIService : IAIService
             var wordChunk = string.Join(" ", chunk);
             var denseVector = await GetDenseVectorsAsync(GetDenseEmbeddingPrompt(wordChunk));
             var sparseVector = await GetSparseVectorsAsync(GetSparseEmbeddingPrompt(wordChunk));
-            _logger.LogDebug("Dense vector count {denseVectorCount}, sparse vector count {sparseVectorCount}",
-                denseVector.ToArray().Length, sparseVector.ToArray().Length);
+            //_logger.LogDebug("Dense vector count {denseVectorCount}, sparse vector count {sparseVectorCount}",
+            //denseVector.ToArray().Length, sparseVector.ToArray().Length);
             var emb = new TextEmbedding(wordChunk, denseVector, sparseVector);
             results.Add(emb);
         }

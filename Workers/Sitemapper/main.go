@@ -35,16 +35,16 @@ func main() {
 	for i := 0; i < WorkerCount; i++ {
 		go func(workerID int) {
 			for row := range jobChan {
-				processRow(row)
+				err := processRow(row)
+				if err != nil {
+					fmt.Println(err)
+				}
 				wg.Done()
 			}
 		}(i)
 	}
 
-	for i, row := range records {
-		if i == 0 || len(row) < 2 {
-			continue
-		}
+	for _, row := range records {
 		wg.Add(1)
 		jobChan <- row
 	}
@@ -55,8 +55,8 @@ func main() {
 	fmt.Println("All jobs completed.")
 }
 
-func processRow(row []string) {
-	domain := row[1]
+func processRow(row []string) error {
+	domain := row[0]
 	fmt.Println("Processing domain:", domain)
 
 	c := colly.NewCollector(
@@ -72,14 +72,12 @@ func processRow(row []string) {
 
 	sitemapURL, err := FindSitemap("https://" + domain)
 	if err != nil {
-		log.Println("Error finding sitemap:", domain, err)
-		return
+		return fmt.Errorf("Error finding sitemap:", domain, err)
 	}
 
 	sitemap, err := ParseSitemap(sitemapURL, c)
 	if err != nil {
-		log.Println("Error parsing sitemap:", domain, err)
-		return
+		return fmt.Errorf("Error parsing sitemap:", domain, err)
 	}
 
 	fmt.Println("Parsed sitemap for:", sitemap.Hostname)
@@ -88,15 +86,13 @@ func processRow(row []string) {
 
 	jsonData, err := json.Marshal(dataToSend)
 	if err != nil {
-		log.Println("JSON marshal error:", err)
-		return
+		return fmt.Errorf("JSON marshal error:", err)
 	}
 
 	url := "http://localhost:1234/indexer/submit-sitemap" // TODO: Extract Vars
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		log.Println("Request creation error:", err)
-		return
+		return fmt.Errorf("Request creation error:", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -104,16 +100,15 @@ func processRow(row []string) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println("HTTP request error:", err)
-		return
+		return fmt.Errorf("HTTP request error:", err)
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Read response error:", err)
-		return
+		return fmt.Errorf("Read response error:", err)
 	}
 
 	fmt.Printf("Domain: %s | Status: %s | Response: %s\n", domain, resp.Status, string(bodyBytes))
+	return nil
 }

@@ -24,7 +24,7 @@ public class SearchController(ISearchService searchService, ILogger<SearchContro
             var resTitle = foundResults.SearchResults[i].ResultPage.Content.Title;
             var resLink = foundResults.SearchResults[i].ResultPage.Url.Location;
             var resSnippet = string
-                .Join(" ", foundResults.SearchResults[i].ResultPage.Content.Text.Split(' ').Take(30));
+                .Join(" ", foundResults.SearchResults[i].ResultPage.Content.Text.Split(' ').Take(50));
 
             results.Add(new SearchResult
             {
