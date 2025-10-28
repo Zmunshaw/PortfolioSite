@@ -4,5 +4,5 @@ namespace SiteBackend.Services.Controllers;
 
 public interface ISearchService
 {
-    Task<DTOSearchRequest> GetResults(string query);
+    Task<IEnumerable<DTOSearchResult>> GetResults(DTOSearchRequest request);
 }

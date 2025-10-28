@@ -1,8 +1,6 @@
 using System.Linq.Expressions;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
-using Pgvector;
-using Pgvector.EntityFrameworkCore;
 using SiteBackend.Database;
 using SiteBackend.Models.SearchEngine.Index;
 
@@ -92,65 +90,5 @@ public class ContentRepo : IContentRepo
     public Task SaveChangesAsync(bool clearCtxOnSave = true)
     {
         throw new NotImplementedException();
-    }
-
-    public async Task<IEnumerable<Page>> GetSimilarSparseEmbeddingsAsync(
-        SparseVector queryVector,
-        int limit = 25,
-        double? maxDistance = null)
-    {
-        await using var ctx = await _ctxFactory.CreateDbContextAsync();
-
-        var baseQuery = ctx.TextEmbeddings.AsQueryable();
-
-        if (maxDistance.HasValue)
-            baseQuery = baseQuery.Where(te =>
-                te.SparseEmbedding != null && te.SparseEmbedding.L2Distance(queryVector) <= maxDistance.Value);
-
-        var orderedQuery = baseQuery
-            .OrderBy(te => te.SparseEmbedding != null ? te.SparseEmbedding.L2Distance(queryVector) : (double?)null)
-            .Take(limit);
-
-        var embeddingResults = await orderedQuery.ToListAsync();
-        var ids = embeddingResults.Select(e => e.TextEmbeddingID).ToList();
-
-        var pages = await ctx.Pages
-            .Where(pg => pg.Content.Embeddings.Any(emb => ids.Contains(emb.TextEmbeddingID)))
-            .Include(pg => pg.Content)
-            .ThenInclude(ct => ct.Embeddings)
-            .Include(pg => pg.Url)
-            .ToListAsync();
-
-        return pages;
-    }
-
-    public async Task<IEnumerable<Page>> GetSimilarDenseEmbeddingsAsync(
-        Vector queryVector,
-        int limit = 25,
-        double? maxDistance = null)
-    {
-        await using var ctx = await _ctxFactory.CreateDbContextAsync();
-
-        var baseQuery = ctx.TextEmbeddings.AsQueryable();
-
-        if (maxDistance.HasValue)
-            baseQuery = baseQuery.Where(te => te.DenseEmbedding != null && te.DenseEmbedding
-                .CosineDistance(queryVector) <= maxDistance);
-
-        var orderedQuery = baseQuery
-            .OrderBy(te => te.DenseEmbedding != null ? te.DenseEmbedding.L2Distance(queryVector) : (double?)null)
-            .Take(limit);
-
-        var embeddingResults = await orderedQuery.ToListAsync();
-        var ids = embeddingResults.Select(e => e.TextEmbeddingID).ToList();
-
-        var pages = await ctx.Pages
-            .Where(pg => pg.Content.Embeddings.Any(emb => ids.Contains(emb.TextEmbeddingID)))
-            .Include(pg => pg.Content)
-            .ThenInclude(ct => ct.Embeddings)
-            .Include(pg => pg.Url)
-            .ToListAsync();
-
-        return pages;
     }
 }

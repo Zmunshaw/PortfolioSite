@@ -37,7 +37,7 @@ public class AIService : IAIService
             var sparseVector = await GetSparseVectorsAsync(GetSparseEmbeddingPrompt(wordChunk));
             //_logger.LogDebug("Dense vector count {denseVectorCount}, sparse vector count {sparseVectorCount}",
             //denseVector.ToArray().Length, sparseVector.ToArray().Length);
-            var emb = new TextEmbedding(wordChunk, denseVector, sparseVector);
+            var emb = new TextEmbedding(denseVector, sparseVector);
             results.Add(emb);
         }
 

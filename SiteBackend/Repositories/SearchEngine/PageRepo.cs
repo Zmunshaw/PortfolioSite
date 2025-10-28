@@ -48,7 +48,7 @@ public class PageRepo : IPageRepo
 
     public async Task<IEnumerable<Page>> GetPagesAsync(Expression<Func<Page, bool>> predicate, int take, int skip = 0)
     {
-        var batchCtx = _ctxFactory.CreateDbContext();
+        var batchCtx = await _ctxFactory.CreateDbContextAsync();
         // TODO: convert to DTO for more perf, maybe; Less queries and stuff.
         return await batchCtx.Pages
             .AsNoTracking()
@@ -133,9 +133,6 @@ public class PageRepo : IPageRepo
             {
                 _logger.LogWarning("Content is null for PageID {PageID}", dbPage.PageID);
             }
-
-            if (contentChanged == true)
-                dbPage.Content.NeedsEmbedding = true;
         }
 
         var bulkConfig = new BulkConfig

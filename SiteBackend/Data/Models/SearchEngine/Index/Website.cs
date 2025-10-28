@@ -44,8 +44,9 @@ public class Page
     public Content Content { get; set; }
 
     public DateTime? LastCrawlAttempt { get; set; }
-
     public DateTime? LastCrawled { get; set; }
+
+    public DateTime? LastUpdated { get; set; }
 
     // FKs
     public Website Website { get; set; }
@@ -78,7 +79,6 @@ public class Content
 
     public List<Word>? Words { get; set; }
     public List<TextEmbedding> Embeddings { get; set; } = new();
-    public bool NeedsEmbedding { get; set; } = false;
 }
 
 /// <summary>
@@ -90,9 +90,8 @@ public class TextEmbedding
     {
     }
 
-    public TextEmbedding(string text, Vector denseEmbedding, SparseVector sparseEmbedding)
+    public TextEmbedding(Vector denseEmbedding, SparseVector sparseEmbedding)
     {
-        RawText = text;
         DenseEmbedding = denseEmbedding;
         SparseEmbedding = sparseEmbedding;
     }
@@ -103,7 +102,6 @@ public class TextEmbedding
 
     // Meta
     public string? EmbeddingHash { get; set; }
-    public string? RawText { get; set; }
 
     // TODO: Move to a settings file or smth
     // Embeddings
