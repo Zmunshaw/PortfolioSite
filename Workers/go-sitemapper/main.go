@@ -2,13 +2,18 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/syumai/workers"
+	"github.com/syumai/workers/cloudflare"
 )
 
 func main() {
+	apiKey := cloudflare.Getenv("API_KEY")
+	backendURL := cloudflare.Getenv("BACKEND_URL")
+	fmt.Printf("API Key: %s\n", apiKey)
 
 	http.HandleFunc("/hello", func(w http.ResponseWriter, req *http.Request) {
 		msg := "Hello!"

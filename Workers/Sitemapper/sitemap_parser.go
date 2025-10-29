@@ -10,35 +10,17 @@ import (
 )
 
 // ParseSitemap recursively fetches sitemaps -- NO LIMIT ON RECURSION
-func ParseSitemap(url string, col *colly.Collector) (Sitemap, error) {
+func ParseSitemap(url string, data []data) (Sitemap, error) {
 	sitemap := Sitemap{Hostname: url}
-	done := make(chan struct{})
-	var once sync.Once
-	var data []byte
-	var fetchErr error
-
-	c := col.Clone()
-
-	c.OnResponse(func(r *colly.Response) {
-		data = r.Body
-		once.Do(func() { close(done) })
-	})
-
-	c.OnError(func(_ *colly.Response, err error) {
-		fetchErr = err
-		once.Do(func() { close(done) })
-	})
-
-	c.OnScraped(func(r *colly.Response) {
-
-	})
-
-	err := c.Visit(url)
+	var fetchErr error	
+	
+	if (url.contains(".gz"))
+	    
+	
 	if err != nil {
 		return sitemap, fmt.Errorf("colly visit error: %w", err)
 	}
 
-	<-done
 	if fetchErr != nil {
 		return sitemap, fmt.Errorf("fetch error: %w", fetchErr)
 	}

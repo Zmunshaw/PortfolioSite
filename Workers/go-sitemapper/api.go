@@ -2,14 +2,10 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/syumai/workers/cloudflare"
 )
 
-func SendSitemap(sitemap Sitemap) {
+func SendSitemap(sitemap Sitemap, apiKey string, backendURL string) {
 	dtoSitemap := TransformToBackendModel(sitemap)
-	apiKey := cloudflare.Getenv("API_KEY")
-	fmt.Println(apiKey)
-
+	fmt.Println("SEND SITEMAP NOT IMPLEMENTED")
 	fmt.Println(dtoSitemap)
 }

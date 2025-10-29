@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -15,19 +16,39 @@ var commonSitemaps = []string{
 	"/sitemaps.xml",
 }
 
-func FindSitemap(baseURL string) (string, error) {
-	var sitemap string
-	sitemap, err := checkRobots(baseURL)
-	if err == nil && sitemap != "" {
-		return sitemap, nil
+func FindSitemap(baseURL string) ([]byte, error) {
+	sitemapUrl, err := checkRobots(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("sitemap url check failed: %v", err)
+	}
+	if sitemapUrl != "" {
+		return GetSitemap(sitemapUrl)
 	}
 
-	sitemap, err = checkMostCommonConfigs(baseURL)
-	if err == nil && sitemap != "" {
-		return sitemap, nil
+	resp, err := checkMostCommonConfigs(baseURL)
+	if err != nil {
+		return nil, err
 	}
 
-	return "", errors.New("sitemap not found")
+	if resp != nil {
+		return resp, nil
+	} else {
+		return nil, fmt.Errorf("FindSitemap ended without any response found url: %s, si", baseURL)
+	}
+}
+
+func GetSitemap(baseURL string) ([]byte, error) {
+	resp, err := http.Head(baseURL)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Get sitemap failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		return io.ReadAll(resp.Body)
+	} else {
+		return nil, fmt.Errorf("Get sitemap failed: %v", resp.StatusCode)
+	}
 }
 
 func checkRobots(baseURL string) (string, error) {
@@ -45,16 +66,26 @@ func checkRobots(baseURL string) (string, error) {
 			return sitemapURL, nil
 		}
 	}
-	return "", errors.New("robots.txt not found")
+	return "", nil
 }
 
-func checkMostCommonConfigs(baseURL string) (string, error) {
+func checkMostCommonConfigs(baseURL string) ([]byte, error) {
+	var err error
+	var resp []byte
+
 	for _, path := range commonSitemaps {
 		fullURL := strings.TrimRight(baseURL, "/") + path
-		resp, err := http.Head(fullURL)
-		if err == nil && resp.StatusCode == http.StatusOK {
-			return fullURL, nil
+		resp, err = GetSitemap(fullURL)
+
+		if err != nil {
+			err = fmt.Errorf("sitemap url check failed: %v", err)
+		} else if resp != nil && len(resp) > 0 {
+			return resp, err
 		}
 	}
-	return "", errors.New("no common sitemap found")
+
+	if err == nil && resp == nil || len(resp) == 0 {
+		err = errors.New("checkMostCommonConfigs failed with unknown error")
+	}
+	return nil, err
 }
