@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gocolly/colly"
+	"github.com/gocolly/colly/v2"
 )
 
 // ParseSitemap recursively fetches sitemaps -- NO LIMIT ON RECURSION

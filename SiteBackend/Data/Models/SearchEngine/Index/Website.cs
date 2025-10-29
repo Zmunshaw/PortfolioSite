@@ -45,8 +45,10 @@ public class Page
 
     public DateTime? LastCrawlAttempt { get; set; }
     public DateTime? LastCrawled { get; set; }
-
     public DateTime? LastUpdated { get; set; }
+
+    public List<Url>? Outlinks { get; set; } = new();
+    public List<Url>? InLinks { get; set; } = new();
 
     // FKs
     public Website Website { get; set; }
@@ -99,14 +101,9 @@ public class TextEmbedding
     [Key] public int TextEmbeddingID { get; set; }
 
     public Content? Content { get; set; }
+    public string? TextHash { get; set; }
 
-    // Meta
-    public string? EmbeddingHash { get; set; }
-
-    // TODO: Move to a settings file or smth
     // Embeddings
     [Column(TypeName = "sparsevec")] public SparseVector? SparseEmbedding { get; set; }
-
-    // TODO: Move to a settings file or smth
     [Column(TypeName = "vector(768)")] public Vector? DenseEmbedding { get; set; }
 }
