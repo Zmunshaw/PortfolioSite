@@ -15,16 +15,13 @@ func main() {
 	backendURL := cloudflare.Getenv("BACKEND_URL")
 	fmt.Printf("API Key: %s\n", apiKey)
         // fmt
-	http.HandleFunc("/hello", func(w http.ResponseWriter, req *http.Request) {
-		msg := "Hello!"
+	http.HandleFunc("/scrape", func(w http.ResponseWriter, req *http.Request) {
+		msg := "This should scrape!"
 		w.Write([]byte(msg))
 	})
-	http.HandleFunc("/echo", func(w http.ResponseWriter, req *http.Request) {
-		b, err := io.ReadAll(req.Body)
-		if err != nil {
-			panic(err)
-		}
-		io.Copy(w, bytes.NewReader(b))
+	http.HandleFunc("/map", func(w http.ResponseWriter, req *http.Request) {
+		msg := "This should sitemap!"
+		w.Write([]byte(msg))
 	})
 	workers.Serve(nil) // use http.DefaultServeMux
 }
