@@ -229,6 +229,14 @@ func BenchmarkScrapeSites(b *testing.B) {
 		"https://words.filippo.io/claude-debugging/", "https://www.temu.com", "https://zacharymunshaw.dev/"}
 
 	for i := 0; i < b.N; i++ {
-		_, _ = MockScrapeSites(urls)
+		_, _ = ScrapeSites(urls)
+	}
+}
+
+func BenchmarkScrapeSingleSite(b *testing.B) {
+	urls := []string{"https://web-scraping.dev/products"}
+
+	for i := 0; i < b.N; i++ {
+		_, _ = ScrapeSites(urls)
 	}
 }
