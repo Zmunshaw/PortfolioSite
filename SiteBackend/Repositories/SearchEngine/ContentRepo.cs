@@ -10,13 +10,11 @@ public class ContentRepo : IContentRepo
 {
     private readonly IDbContextFactory<SearchEngineCtx> _ctxFactory;
     private readonly ILogger<ContentRepo> _logger;
-    private SearchEngineCtx _ctx;
 
     public ContentRepo(ILogger<ContentRepo> logger, IDbContextFactory<SearchEngineCtx> ctxFactory)
     {
         _logger = logger;
         _ctxFactory = ctxFactory;
-        _ctx = _ctxFactory.CreateDbContext();
     }
 
     public Task AddContentAsync(Content Content)
@@ -53,9 +51,9 @@ public class ContentRepo : IContentRepo
         return await batchCtx.Contents
             .AsNoTracking()
             .Where(predicate)
+            .Include(ct => ct.Embeddings)
             .Skip(skip)
             .Take(take)
-            .Include(ct => ct.Embeddings)
             .AsSplitQuery()
             .ToListAsync();
     }

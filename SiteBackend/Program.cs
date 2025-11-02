@@ -58,7 +58,6 @@ void AddServices(WebApplicationBuilder bldr)
 {
     bldr.Services.AddScoped<IAiClient, AiClient>();
     bldr.Services.AddScoped<IAIService, AIService>();
-    bldr.Services.AddScoped<ISitemapService, SitemapService>();
     bldr.Services.AddScoped<ICrawlerService, CrawlerService>();
     bldr.Services.AddScoped<ISearchService, SearchService>();
     bldr.Services.AddHostedService<EmbeddingManager>();

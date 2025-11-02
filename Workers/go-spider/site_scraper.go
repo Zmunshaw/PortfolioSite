@@ -13,8 +13,8 @@ func ScrapeSites(urls []string) ([]map[string]interface{}, error) {
 		return nil, err
 	}
 
-	venvPath := ".venv/bin/python3"
-	cmd := exec.Command(venvPath, "go-spider/stealth_scrape.py", string(jsonBytes))
+	venvPath := "./venv/bin/python3"
+	cmd := exec.Command(venvPath, "python/stealth_scrape.py", string(jsonBytes))
 
 	var out bytes.Buffer
 	cmd.Stdout = &out

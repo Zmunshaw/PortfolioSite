@@ -1,7 +1,7 @@
 import json
 import sys
-
 import stealth_requests
+from extract_data import extract_main_content
 
 urls = json.loads(sys.argv[1])
 results = []
@@ -14,12 +14,11 @@ for url in urls:
             "links": resp.links,
             "title": resp.meta.title,
             "description": resp.meta.description,
-            "content": resp.text_content(),
+            "content": extract_main_content(resp.text_content()),
             "images": resp.images,
             "keywords": resp.meta.keywords,
         }
         results.append(data)
     except Exception as e:
         results.append({"url": url, "error": str(e)})
-
 print(json.dumps(results))
