@@ -38,8 +38,8 @@ public class ContentRepo : IContentRepo
 
         return batchCtx.Contents
             .AsNoTracking()
-            .Include(ct => ct.Embeddings)
             .Where(predicate)
+            .Include(ct => ct.Embeddings)
             .ToList();
     }
 

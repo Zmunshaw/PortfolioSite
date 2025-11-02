@@ -10,19 +10,18 @@ public class PageRepo : IPageRepo
 {
     private readonly IDbContextFactory<SearchEngineCtx> _ctxFactory;
     private readonly ILogger<PageRepo> _logger;
-    private SearchEngineCtx _ctx;
 
     public PageRepo(ILogger<PageRepo> logger, IDbContextFactory<SearchEngineCtx> ctxFactory)
     {
         _logger = logger;
         _ctxFactory = ctxFactory;
-        _ctx = _ctxFactory.CreateDbContext();
     }
 
     public async Task AddPageAsync(Page page)
     {
+        await using var ctx = await _ctxFactory.CreateDbContextAsync();
         // Avoid duplicates this way.
-        await FindOrCreatePage(page, _ctx);
+        await FindOrCreatePage(page, ctx);
         _logger.LogDebug("Added page: {Page}", page);
     }
 
@@ -37,7 +36,8 @@ public class PageRepo : IPageRepo
 
     public async Task<Page?> GetPageAsync(Expression<Func<Page, bool>> predicate)
     {
-        return await _ctx.Pages.Where(predicate).FirstOrDefaultAsync();
+        await using var ctx = await _ctxFactory.CreateDbContextAsync();
+        return await ctx.Pages.Where(predicate).FirstOrDefaultAsync();
     }
 
     public async Task<IEnumerable<Page>> GetPagesAsync(Expression<Func<Page, bool>> predicate)
@@ -65,7 +65,8 @@ public class PageRepo : IPageRepo
 
     public async Task UpdatePageAsync(Page page)
     {
-        _ctx.Pages.Update(page);
+        await using var ctx = await _ctxFactory.CreateDbContextAsync();
+        ctx.Pages.Update(page);
     }
 
     public async Task BatchUpdatePageAsync(IEnumerable<Page> pages)
@@ -152,20 +153,22 @@ public class PageRepo : IPageRepo
 
     public async Task SaveChangesAsync(bool clearCtxOnSave = true)
     {
-        if (!_ctx.ChangeTracker.AutoDetectChangesEnabled)
-            _ctx.ChangeTracker.DetectChanges();
+        await using var ctx = await _ctxFactory.CreateDbContextAsync();
+        if (!ctx.ChangeTracker.AutoDetectChangesEnabled)
+            ctx.ChangeTracker.DetectChanges();
 
-        await _ctx.SaveChangesAsync();
+        await ctx.SaveChangesAsync();
 
         if (clearCtxOnSave)
-            _ctx.ChangeTracker.Clear(); // Avoid possible memleak from loaded entities.
+            ctx.ChangeTracker.Clear(); // Avoid possible memleak from loaded entities.
     }
 
     public bool ToggleChangeTracker()
     {
-        _ctx.ChangeTracker.AutoDetectChangesEnabled = !_ctx.ChangeTracker.AutoDetectChangesEnabled;
+        using var ctx = _ctxFactory.CreateDbContext();
+        ctx.ChangeTracker.AutoDetectChangesEnabled = !ctx.ChangeTracker.AutoDetectChangesEnabled;
 
-        return _ctx.ChangeTracker.AutoDetectChangesEnabled;
+        return ctx.ChangeTracker.AutoDetectChangesEnabled;
     }
 
     public Task BatchDeletePageAsync(IEnumerable<Page> pages)
