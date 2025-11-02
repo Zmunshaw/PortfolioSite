@@ -1,36 +1,35 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
-	"os"
+	"fmt"
 	"os/exec"
-	"path/filepath"
 )
 
-// Calls a python script since go is garbo for browser rendering and headless does not get content
 func ScrapeSites(urls []string) ([]map[string]interface{}, error) {
 	jsonBytes, err := json.Marshal(urls)
 	if err != nil {
 		return nil, err
 	}
 
-	wd, err := os.Getwd()
+	venvPath := ".venv/bin/python3"
+	cmd := exec.Command(venvPath, "go-spider/stealth_scrape.py", string(jsonBytes))
+
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+
+	err = cmd.Run()
 	if err != nil {
-		return nil, err
-	}
-
-	pythonPath := filepath.Join(wd, ".venv", "bin", "python3")
-
-	cmd := exec.Command(pythonPath, "stealth_scrape.py", string(jsonBytes))
-	output, err := cmd.CombinedOutput()
-
-	if err != nil {
+		fmt.Printf("Python error: %s\n", out.String())
 		return nil, err
 	}
 
 	var results []map[string]interface{}
-	err = json.Unmarshal(output, &results)
+	err = json.Unmarshal(out.Bytes(), &results)
 	if err != nil {
+		fmt.Printf("JSON parse error: %s\n", out.String())
 		return nil, err
 	}
 

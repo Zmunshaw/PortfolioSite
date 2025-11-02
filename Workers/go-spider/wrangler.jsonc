@@ -7,7 +7,9 @@
   "name": "go-sitemapper",
   "main": "./build/worker.mjs",
   "vars": {
-    "API_KEY": "production_value"
+    "API_KEY": "production_value",
+    "BACKEND_URL": "https://zacharymunshaw.dev",
+    "SCRAPE_WORKER_URL": "bleh"
   },
   "compatibility_date": "2025-10-24",
   "build": {

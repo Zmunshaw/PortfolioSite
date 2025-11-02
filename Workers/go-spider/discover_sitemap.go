@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,25 +29,25 @@ func FindSitemap(baseURL string) ([]byte, error) {
 		return nil, err
 	}
 
-	if resp != nil {
+	if resp != nil && len(resp) > 0 {
 		return resp, nil
-	} else {
-		return nil, fmt.Errorf("FindSitemap ended without any response found url: %s, si", baseURL)
 	}
+
+	return nil, fmt.Errorf("FindSitemap failed: no sitemap found for url: %s", baseURL)
 }
 
 func GetSitemap(baseURL string) ([]byte, error) {
-	resp, err := http.Head(baseURL)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Get sitemap failed: %v", err)
+	resp, err := http.Get(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("get sitemap failed: %v", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusOK {
-		return io.ReadAll(resp.Body)
-	} else {
-		return nil, fmt.Errorf("Get sitemap failed: %v", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("get sitemap failed: status code %d", resp.StatusCode)
 	}
+
+	return io.ReadAll(resp.Body)
 }
 
 func checkRobots(baseURL string) (string, error) {
@@ -59,6 +58,10 @@ func checkRobots(baseURL string) (string, error) {
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
 	lines := strings.Split(string(body), "\n")
 	for _, line := range lines {
 		if strings.HasPrefix(strings.ToLower(line), "sitemap:") {
@@ -70,22 +73,14 @@ func checkRobots(baseURL string) (string, error) {
 }
 
 func checkMostCommonConfigs(baseURL string) ([]byte, error) {
-	var err error
-	var resp []byte
-
 	for _, path := range commonSitemaps {
 		fullURL := strings.TrimRight(baseURL, "/") + path
-		resp, err = GetSitemap(fullURL)
+		resp, err := GetSitemap(fullURL)
 
-		if err != nil {
-			err = fmt.Errorf("sitemap url check failed: %v", err)
-		} else if resp != nil && len(resp) > 0 {
-			return resp, err
+		if err == nil && resp != nil && len(resp) > 0 {
+			return resp, nil
 		}
 	}
 
-	if err == nil && resp == nil || len(resp) == 0 {
-		err = errors.New("checkMostCommonConfigs failed with unknown error")
-	}
-	return nil, err
+	return nil, fmt.Errorf("checkMostCommonConfigs: no sitemap found at common locations for %s", baseURL)
 }

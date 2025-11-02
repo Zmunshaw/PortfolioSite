@@ -15,11 +15,9 @@ func ParseSitemap(sitemapURL string, sitemapData []byte) (Sitemap, error) {
 		fmt.Println("Sitemap index parsed from sitemap")
 	}
 
-	decoder = xml.NewDecoder(bytes.NewReader(sitemapData))
-	decoder.Strict = false
 	if err := decoder.Decode(&sitemap.UrlSet); err == nil && len(sitemap.UrlSet.URL) > 0 {
 		fmt.Printf("URL Set found with %d\n", len(sitemap.UrlSet.URL))
 	}
 
-	return sitemap, fmt.Errorf("unable to parse sitemap or urlset")
+	return sitemap, nil
 }
