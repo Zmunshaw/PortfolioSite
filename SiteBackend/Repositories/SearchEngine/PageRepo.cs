@@ -37,7 +37,9 @@ public class PageRepo : IPageRepo
     public async Task<Page?> GetPageAsync(Expression<Func<Page, bool>> predicate)
     {
         await using var ctx = await _ctxFactory.CreateDbContextAsync();
-        return await ctx.Pages.Where(predicate).FirstOrDefaultAsync();
+        return await ctx.Pages
+            .Where(predicate)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<IEnumerable<Page>> GetPagesAsync(Expression<Func<Page, bool>> predicate)
