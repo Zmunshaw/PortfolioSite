@@ -14,7 +14,7 @@ func main() {
 	apiKey := cloudflare.Getenv("API_KEY")
 	backendURL := cloudflare.Getenv("BACKEND_URL")
 	fmt.Printf("API Key: %s\n", apiKey)
-
+        // fmt
 	http.HandleFunc("/hello", func(w http.ResponseWriter, req *http.Request) {
 		msg := "Hello!"
 		w.Write([]byte(msg))
