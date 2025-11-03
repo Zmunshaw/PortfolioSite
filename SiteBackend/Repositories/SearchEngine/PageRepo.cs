@@ -56,12 +56,30 @@ public class PageRepo : IPageRepo
             .AsNoTracking()
             .AsSplitQuery()
             .Where(predicate)
-            .Skip(skip)
-            .Take(take)
             .Include(p => p.Url)
             .Include(p => p.Content)
             .ThenInclude(c => c.Embeddings)
             .Include(p => p.Website)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync();
+    }
+
+    // TODO: Fix hardcoded consts
+    public async Task<IEnumerable<Page>> GetPagesToCrawlAsync()
+    {
+        await using var ctx = await _ctxFactory.CreateDbContextAsync();
+
+        return await ctx.Pages
+            .Where(p => p.LastCrawled == null || (p.LastCrawled < DateTime.UtcNow.AddDays(-7)
+                                                  && p.LastCrawlAttempt == null) ||
+                        (p.LastCrawlAttempt < DateTime.UtcNow.AddHours(-12)
+                         && p.CrawlAttempts < 5))
+            .Include(p => p.Content)
+            .Include(p => p.Website)
+            .Include(p => p.Url)
+            .Include(p => p.Outlinks)
+            .Take(20)
             .ToListAsync();
     }
 

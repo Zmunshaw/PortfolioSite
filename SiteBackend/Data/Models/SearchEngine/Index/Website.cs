@@ -44,6 +44,7 @@ public class Page
     public Content Content { get; set; }
 
     public DateTime? LastCrawlAttempt { get; set; }
+    public int CrawlAttempts { get; set; } = 0;
     public DateTime? LastCrawled { get; set; }
     public DateTime? LastUpdated { get; set; }
 
@@ -78,9 +79,10 @@ public class Content
     [MaxLength(25 * 1024 * 1024)] public string? Text { get; set; }
 
     public string? ContentHash { get; set; }
-
     public List<Word>? Words { get; set; }
     public List<TextEmbedding> Embeddings { get; set; } = new();
+
+    public DateTime? LastScraped { get; set; }
 }
 
 /// <summary>

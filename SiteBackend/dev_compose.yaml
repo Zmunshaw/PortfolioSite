@@ -10,6 +10,7 @@ services:
       SE_DB_CONN: "host=${SE_DEV_DB_HOST};port=${SE_DEV_DB_PORT};database=${SE_DEV_DB_NAME};username=${SE_DEV_DB_USER};password=${SE_DEV_DB_PASS};"
       SITE_DB_CONN: "host=${SITE_DEV_DB_HOST};port=${SITE_DEV_DB_PORT};database=${SITE_DEV_DB_NAME};username=${SITE_DEV_DB_USER};password=${SITE_DEV_DB_PASS};"
       SAFE_MODE: false
+      WIPE_ON_START: false
       ASPNETCORE_ENVIRONMENT: Development
       API_PORT: ${DEV_PORT}
     volumes:

@@ -5,6 +5,7 @@ using SiteBackend.Data.SeedData;
 using SiteBackend.Database;
 using SiteBackend.Middleware.AIClient;
 using SiteBackend.Repositories.SearchEngine;
+using SiteBackend.Repositories.SearchEngine.Interfaces;
 using SiteBackend.Services;
 using SiteBackend.Services.Controllers;
 using SiteBackend.Singletons;
@@ -56,11 +57,13 @@ void AddDatabases(WebApplicationBuilder bldr)
 
 void AddServices(WebApplicationBuilder bldr)
 {
+    bldr.Services.AddHttpClient();
     bldr.Services.AddScoped<IAiClient, AiClient>();
     bldr.Services.AddScoped<IAIService, AIService>();
     bldr.Services.AddScoped<ICrawlerService, CrawlerService>();
     bldr.Services.AddScoped<ISearchService, SearchService>();
     bldr.Services.AddHostedService<EmbeddingManager>();
+    bldr.Services.AddHostedService<CrawlManager>();
 }
 
 void AddRepositories(WebApplicationBuilder bldr)
@@ -69,6 +72,7 @@ void AddRepositories(WebApplicationBuilder bldr)
     bldr.Services.AddScoped<IPageRepo, PageRepo>();
     bldr.Services.AddScoped<IContentRepo, ContentRepo>();
     bldr.Services.AddScoped<IDictionaryRepo, DictionaryRepo>();
+    bldr.Services.AddScoped<ISearchRepo, SearchRepo>();
 }
 
 void AddControllers(WebApplicationBuilder bldr)
@@ -100,7 +104,7 @@ void BuildDev(WebApplicationBuilder bldr)
     Console.WriteLine($"Environment: {bldr.Environment.EnvironmentName} Initializing...");
     using var scope = bldr.Services.BuildServiceProvider().CreateScope();
     var dbCtx = scope.ServiceProvider.GetRequiredService<SearchEngineCtx>();
-    var seedTask = Task.Run(() => LoadSeedData.SeedDatabase(dbCtx)); // This should run on seperate thread
+    var seedTask = Task.Run(() => LoadSeedData.SeedDatabase(dbCtx));
     Task.WaitAll(seedTask);
     Console.WriteLine($"Environment: {bldr.Environment.EnvironmentName} Initialized");
 }

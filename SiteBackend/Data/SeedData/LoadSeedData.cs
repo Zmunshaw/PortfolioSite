@@ -19,6 +19,7 @@ public static class LoadSeedData
         var safeMode = Environment.GetEnvironmentVariable("SAFE_MODE") != "false";
         var wipeDatabase = Environment.GetEnvironmentVariable("WIPE_ON_START") == "true";
 
+        Console.WriteLine($"Checking WIPEDB: {wipeDatabase}, SAFEMODE: {safeMode}");
         // safety first.
         if (safeMode)
             return;
