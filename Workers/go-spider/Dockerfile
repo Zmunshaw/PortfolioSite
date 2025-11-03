@@ -17,5 +17,5 @@ WORKDIR /app
 # Copy only the binary from the build stage
 COPY --from=build /app/app .
 
-EXPOSE 8080
+EXPOSE 9900
 CMD ["./app"]
