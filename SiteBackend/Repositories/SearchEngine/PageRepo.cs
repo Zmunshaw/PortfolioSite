@@ -71,9 +71,9 @@ public class PageRepo : IPageRepo
         await using var ctx = await _ctxFactory.CreateDbContextAsync();
 
         return await ctx.Pages
-            .Where(p => p.LastCrawled == null || (p.LastCrawled < DateTime.UtcNow.AddDays(-7)
+            .Where(p => p.LastCrawled == null || (p.LastCrawled < DateTime.UtcNow.AddDays(-31)
                                                   && p.LastCrawlAttempt == null) ||
-                        (p.LastCrawlAttempt < DateTime.UtcNow.AddHours(-12)
+                        (p.LastCrawlAttempt < DateTime.UtcNow.AddHours(-5)
                          && p.CrawlAttempts < 5))
             .Include(p => p.Content)
             .Include(p => p.Website)
@@ -87,6 +87,7 @@ public class PageRepo : IPageRepo
     {
         await using var ctx = await _ctxFactory.CreateDbContextAsync();
         ctx.Pages.Update(page);
+        await ctx.SaveChangesAsync();
     }
 
     public async Task BatchUpdatePageAsync(IEnumerable<Page> pages)

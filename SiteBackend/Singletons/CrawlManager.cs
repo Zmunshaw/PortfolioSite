@@ -9,7 +9,7 @@ namespace SiteBackend.Singletons;
 public class CrawlManager : BackgroundService
 {
     private readonly string _crawlerUrl = Environment.GetEnvironmentVariable("CRAWLER_URL")
-                                          ?? "http://127.0.0.1:9900/scrape";
+                                          ?? "http://crawler-dev:9900";
 
     private readonly HttpClient _httpClient;
     private readonly ILogger<CrawlManager> _logger;
@@ -100,7 +100,6 @@ public class CrawlManager : BackgroundService
                 return;
             }
 
-
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Scraper returned {StatusCode} for {Url}", response.StatusCode, page.Url.Location);
@@ -121,16 +120,16 @@ public class CrawlManager : BackgroundService
             }
 
             var scraperResult = results.First();
-            var contentRecord = new Content
-            {
-                Page = page,
-                Title = scraperResult.Title ?? "",
-                Text = scraperResult.Content ?? "",
-                LastScraped = DateTime.UtcNow
-            };
+            page.LastCrawlAttempt = DateTime.UtcNow;
+            page.Outlinks = scraperResult.Links.Select(lnk => new Url(lnk)).ToList();
+            page.LastCrawled = DateTime.UtcNow;
+            page.Content.Title = scraperResult.Title ?? "";
+            page.Content.Description = scraperResult.Description ?? "";
+            page.Content.Text = scraperResult.Content ?? "";
 
-            await contentRepo.AddContentAsync(contentRecord);
-
+            _logger.LogDebug(
+                $"Title {scraperResult.Title ?? "None"} and Description {scraperResult.Description ?? "None"}, " +
+                $"link count: {(scraperResult.Links.Count == 0 ? "Empty" : scraperResult.Links.Count.ToString())}");
             page.LastCrawled = DateTime.UtcNow;
             await pageRepo.UpdatePageAsync(page);
 

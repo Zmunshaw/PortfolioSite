@@ -50,11 +50,11 @@ public class ContentRepo : IContentRepo
 
         return await batchCtx.Contents
             .AsNoTracking()
+            .AsSplitQuery()
             .Where(predicate)
             .Include(ct => ct.Embeddings)
             .Skip(skip)
             .Take(take)
-            .AsSplitQuery()
             .ToListAsync();
     }
 

@@ -19,6 +19,7 @@ services:
       - ${DEV_PORT}:${DEV_PORT}
     networks:
       - zm-dev-tunnel-net
+      - zm-dev-be-net
       - zm-dev-db-net
       - zm-dev-cache-net
   
@@ -66,11 +67,24 @@ services:
       - DEV-se-db:/var/lib/postgresql/data
     networks:
       - zm-dev-db-net
+    ## Crawler
+  crawler-dev:
+    image: crawler:dev
+    restart: always
+    build:
+      context: ../Workers/go-spider
+      dockerfile: Dockerfile
+    ports:
+      - 9900:9900
+    networks:
+      - zm-dev-be-net
 
 networks:
   zm-dev-tunnel-net:
     driver: bridge
   zm-dev-db-net:
+    driver: bridge
+  zm-dev-be-net:
     driver: bridge
   zm-dev-cache-net:
     driver: bridge

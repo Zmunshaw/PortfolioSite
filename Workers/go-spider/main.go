@@ -34,6 +34,7 @@ func scrapeRequestHandler(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"error": "POST only"})
+		fmt.Println("FAIL: scrape request POST only")
 		return
 	}
 

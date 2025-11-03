@@ -22,7 +22,7 @@ func ScrapeSites(urls []string) ([]map[string]interface{}, error) {
 
 	err = cmd.Run()
 	if err != nil {
-		fmt.Printf("Python error: %s\n", out.String())
+		fmt.Printf("Python error: %s CMD Error: %s\n", out.String(), err.Error())
 		return nil, err
 	}
 

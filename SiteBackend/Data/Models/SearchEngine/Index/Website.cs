@@ -46,7 +46,6 @@ public class Page
     public DateTime? LastCrawlAttempt { get; set; }
     public int CrawlAttempts { get; set; } = 0;
     public DateTime? LastCrawled { get; set; }
-    public DateTime? LastUpdated { get; set; }
 
     public List<Url>? Outlinks { get; set; } = new();
     public List<Url>? InLinks { get; set; } = new();
@@ -72,13 +71,15 @@ public class Content
 
     public Page Page { get; set; }
 
+    public string? ContentHash { get; set; }
     [MaxLength(1024)] public string? Title { get; set; }
+
+    public string? Description { get; set; }
 
     // (2 * MaxLength)Bytes I think (26ish mb assuming 25 * 1024 * 1024)
     // assumption being that C# chars and pg chars are equal
     [MaxLength(25 * 1024 * 1024)] public string? Text { get; set; }
 
-    public string? ContentHash { get; set; }
     public List<Word>? Words { get; set; }
     public List<TextEmbedding> Embeddings { get; set; } = new();
 
