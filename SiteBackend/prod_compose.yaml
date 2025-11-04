@@ -9,6 +9,7 @@ services:
     environment:
       SE_DB_CONN: "host=${SE_PROD_DB_HOST};port=${SE_PROD_DB_PORT};database=${SE_PROD_DB_NAME};username=${SE_PROD_DB_USER};password=${SE_PROD_DB_PASS};"
       SITE_DB_CONN: "host=${SITE_PROD_DB_HOST};port=${SITE_PROD_DB_PORT};database=${SITE_PROD_DB_NAME};username=${SITE_PROD_DB_USER};password=${SITE_PROD_DB_PASS};"
+      CRAWLER_URL: "http://crawler-prod:9900"
       ASPNETCORE_ENVIRONMENT: Production
       API_PORT: ${PROD_PORT}
     volumes:
@@ -19,6 +20,7 @@ services:
       - zm-prod-tunnel-net
       - zm-prod-db-net
       - zm-prod-cache-net
+      - zm-prod-be-net
   
   cloudflared-prod:
     image: cloudflare/cloudflared:latest
@@ -64,6 +66,16 @@ services:
       - PROD-se-db:/var/lib/postgresql/data
     networks:
       - zm-prod-db-net
+  crawler-prod:
+    image: crawler:prod
+    restart: always
+    build:
+      context: ../Workers/go-spider
+      dockerfile: Dockerfile
+    ports:
+      - 9901:9900
+    networks:
+      - zm-prod-be-net
 
 networks:
   zm-prod-tunnel-net:
@@ -71,6 +83,8 @@ networks:
   zm-prod-db-net:
     driver: bridge
   zm-prod-cache-net:
+    driver: bridge
+  zm-prod-be-net:
     driver: bridge
 
 volumes:
