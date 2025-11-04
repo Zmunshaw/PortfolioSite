@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
-using SiteBackend.Models.SearchEngine;
+using SiteBackend.DTO.Website;
 using SiteBackend.Services.Controllers;
 
 namespace SiteBackend.Controllers.SearchEngine;
@@ -12,32 +12,17 @@ public class SearchController(ISearchService searchService, ILogger<SearchContro
     [HttpGet]
     public async Task<IActionResult> Get(
         [FromQuery] string q,
-        [FromQuery] int limit = 25,
+        [FromQuery] int pgsz = 25,
+        [FromQuery] int crpg = 1,
         [FromQuery] string? site = null)
     {
-        var foundResults = await searchService.GetResults(q);
-        List<SearchResult> results = new();
+        var request = new DTOSearchRequest(q, crpg, pgsz);
 
-        // Simulate creating a list of results up to maxResults
-        for (var i = 0; i < foundResults.SearchResults.Count; i++)
-        {
-            var resTitle = foundResults.SearchResults[i].ResultPage.Content.Title;
-            var resLink = foundResults.SearchResults[i].ResultPage.Url.Location;
-            var resSnippet = string
-                .Join(" ", foundResults.SearchResults[i].ResultPage.Content.Text.Split(' ').Take(50));
+        var foundResults = await searchService.GetResults(request);
 
-            results.Add(new SearchResult
-            {
-                Id = i.ToString(),
-                Title = resTitle,
-                Url = resLink,
-                Snippet = $"{resSnippet}"
-            });
-        }
+        logger.LogInformation($"New search query for '{q}', {crpg} Page Size: {pgsz}, site: {site}");
 
-        logger.LogInformation($"New search query for '{q}', maxResults: {limit}, site: {site}");
-
-        var resp = Ok(new { results });
+        var resp = Ok(new { foundResults });
         Console.WriteLine($"Resp: {JsonSerializer.Serialize(resp.Value)}");
         return resp;
     }

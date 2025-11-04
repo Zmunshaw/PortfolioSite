@@ -53,7 +53,8 @@ public class EmbeddingManager : BackgroundService
     {
         var pagesPerRequest = 25;
         IEnumerable<Content> updateList = await _contentRepo
-            .GetContentsAsync(ct => ct.NeedsEmbedding && !string.IsNullOrEmpty(ct.Text), pagesPerRequest, currentPage);
+            .GetContentsAsync(ct => ct.Embeddings.Count == 0 && !string.IsNullOrEmpty(ct.Text),
+                pagesPerRequest, currentPage);
         var enumerable = updateList.ToArray();
         if (enumerable.Length != 0)
             _logger.LogDebug("Found {ContentCount} pages that need new embeddings", enumerable.Length);
@@ -68,7 +69,6 @@ public class EmbeddingManager : BackgroundService
 
             foreach (var emb in content.Embeddings)
             {
-                emb.EmbeddingHash = ComputeContentHash(emb.RawText);
                 emb.Content = content;
             }
 

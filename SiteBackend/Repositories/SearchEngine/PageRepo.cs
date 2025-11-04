@@ -10,19 +10,18 @@ public class PageRepo : IPageRepo
 {
     private readonly IDbContextFactory<SearchEngineCtx> _ctxFactory;
     private readonly ILogger<PageRepo> _logger;
-    private SearchEngineCtx _ctx;
 
     public PageRepo(ILogger<PageRepo> logger, IDbContextFactory<SearchEngineCtx> ctxFactory)
     {
         _logger = logger;
         _ctxFactory = ctxFactory;
-        _ctx = _ctxFactory.CreateDbContext();
     }
 
     public async Task AddPageAsync(Page page)
     {
+        await using var ctx = await _ctxFactory.CreateDbContextAsync();
         // Avoid duplicates this way.
-        await FindOrCreatePage(page, _ctx);
+        await FindOrCreatePage(page, ctx);
         _logger.LogDebug("Added page: {Page}", page);
     }
 
@@ -37,7 +36,10 @@ public class PageRepo : IPageRepo
 
     public async Task<Page?> GetPageAsync(Expression<Func<Page, bool>> predicate)
     {
-        return await _ctx.Pages.Where(predicate).FirstOrDefaultAsync();
+        await using var ctx = await _ctxFactory.CreateDbContextAsync();
+        return await ctx.Pages
+            .Where(predicate)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<IEnumerable<Page>> GetPagesAsync(Expression<Func<Page, bool>> predicate)
@@ -48,24 +50,44 @@ public class PageRepo : IPageRepo
 
     public async Task<IEnumerable<Page>> GetPagesAsync(Expression<Func<Page, bool>> predicate, int take, int skip = 0)
     {
-        var batchCtx = _ctxFactory.CreateDbContext();
+        var batchCtx = await _ctxFactory.CreateDbContextAsync();
         // TODO: convert to DTO for more perf, maybe; Less queries and stuff.
         return await batchCtx.Pages
             .AsNoTracking()
             .AsSplitQuery()
             .Where(predicate)
-            .Skip(skip)
-            .Take(take)
             .Include(p => p.Url)
             .Include(p => p.Content)
             .ThenInclude(c => c.Embeddings)
             .Include(p => p.Website)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync();
+    }
+
+    // TODO: Fix hardcoded consts
+    public async Task<IEnumerable<Page>> GetPagesToCrawlAsync()
+    {
+        await using var ctx = await _ctxFactory.CreateDbContextAsync();
+
+        return await ctx.Pages
+            .Where(p => p.LastCrawled == null || (p.LastCrawled < DateTime.UtcNow.AddDays(-31)
+                                                  && p.LastCrawlAttempt == null) ||
+                        (p.LastCrawlAttempt < DateTime.UtcNow.AddHours(-5)
+                         && p.CrawlAttempts < 5))
+            .Include(p => p.Content)
+            .Include(p => p.Website)
+            .Include(p => p.Url)
+            .Include(p => p.Outlinks)
+            .Take(20)
             .ToListAsync();
     }
 
     public async Task UpdatePageAsync(Page page)
     {
-        _ctx.Pages.Update(page);
+        await using var ctx = await _ctxFactory.CreateDbContextAsync();
+        ctx.Pages.Update(page);
+        await ctx.SaveChangesAsync();
     }
 
     public async Task BatchUpdatePageAsync(IEnumerable<Page> pages)
@@ -133,9 +155,6 @@ public class PageRepo : IPageRepo
             {
                 _logger.LogWarning("Content is null for PageID {PageID}", dbPage.PageID);
             }
-
-            if (contentChanged == true)
-                dbPage.Content.NeedsEmbedding = true;
         }
 
         var bulkConfig = new BulkConfig
@@ -155,20 +174,22 @@ public class PageRepo : IPageRepo
 
     public async Task SaveChangesAsync(bool clearCtxOnSave = true)
     {
-        if (!_ctx.ChangeTracker.AutoDetectChangesEnabled)
-            _ctx.ChangeTracker.DetectChanges();
+        await using var ctx = await _ctxFactory.CreateDbContextAsync();
+        if (!ctx.ChangeTracker.AutoDetectChangesEnabled)
+            ctx.ChangeTracker.DetectChanges();
 
-        await _ctx.SaveChangesAsync();
+        await ctx.SaveChangesAsync();
 
         if (clearCtxOnSave)
-            _ctx.ChangeTracker.Clear(); // Avoid possible memleak from loaded entities.
+            ctx.ChangeTracker.Clear(); // Avoid possible memleak from loaded entities.
     }
 
     public bool ToggleChangeTracker()
     {
-        _ctx.ChangeTracker.AutoDetectChangesEnabled = !_ctx.ChangeTracker.AutoDetectChangesEnabled;
+        using var ctx = _ctxFactory.CreateDbContext();
+        ctx.ChangeTracker.AutoDetectChangesEnabled = !ctx.ChangeTracker.AutoDetectChangesEnabled;
 
-        return _ctx.ChangeTracker.AutoDetectChangesEnabled;
+        return ctx.ChangeTracker.AutoDetectChangesEnabled;
     }
 
     public Task BatchDeletePageAsync(IEnumerable<Page> pages)

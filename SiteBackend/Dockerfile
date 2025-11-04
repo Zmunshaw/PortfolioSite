@@ -11,7 +11,8 @@ COPY ["SiteBackend/SiteBackend.csproj", "SiteBackend/"]
 RUN dotnet restore "SiteBackend/SiteBackend.csproj"
 COPY . .
 WORKDIR "/src/SiteBackend"
-RUN dotnet build "./SiteBackend.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./SiteBackend.csproj" -c $BUILD_CONFIGURATION -o /app/build \
+dotnet ef database update --project YourProject.csproj
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
@@ -20,4 +21,5 @@ RUN dotnet publish "./SiteBackend.csproj" -c $BUILD_CONFIGURATION -o /app/publis
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
 ENTRYPOINT ["dotnet", "SiteBackend.dll"]

@@ -11,14 +11,11 @@ public class SpiderController : ControllerBase
 {
     private readonly ICrawlerService _crawlerService;
     private readonly ILogger<SpiderController> _logger;
-    private readonly ISitemapService _sitemapService;
 
-    public SpiderController(ILogger<SpiderController> logger, ICrawlerService crawlerService,
-        ISitemapService sitemapService)
+    public SpiderController(ILogger<SpiderController> logger, ICrawlerService crawlerService)
     {
         _logger = logger;
         _crawlerService = crawlerService;
-        _sitemapService = sitemapService;
     }
 
     #region Scraping
@@ -54,8 +51,7 @@ public class SpiderController : ControllerBase
     {
         _logger.LogInformation("Received new sitemap");
         _logger.LogInformation(newSitemap.Location);
-
-        await _sitemapService.AddSitemap(newSitemap);
+        
         return Ok();
     }
 
@@ -77,8 +73,7 @@ public class SpiderController : ControllerBase
     {
         _logger.LogInformation("Received new sitemap");
         _logger.LogInformation(newSitemap.Location);
-
-        await _sitemapService.AddSitemap(newSitemap);
+        
         return Ok();
     }
 

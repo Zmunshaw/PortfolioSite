@@ -12,6 +12,7 @@ public interface IPageRepo
     Task<IEnumerable<Page>> GetPagesAsync(Expression<Func<Page, bool>> predicate);
     Task<IEnumerable<Page>> GetPagesAsync(Expression<Func<Page, bool>> predicate, int take, int skip = 0);
 
+    Task<IEnumerable<Page>> GetPagesToCrawlAsync();
     Task UpdatePageAsync(Page page);
     Task BatchUpdatePageAsync(IEnumerable<Page> pages);
 

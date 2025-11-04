@@ -18,16 +18,20 @@ public static class LoadSeedData
     {
         var safeMode = Environment.GetEnvironmentVariable("SAFE_MODE") != "false";
         var wipeDatabase = Environment.GetEnvironmentVariable("WIPE_ON_START") == "true";
-
-        // safety first.
-        if (safeMode)
-            return;
+        var migrateDatabase = Environment.GetEnvironmentVariable("MIGRATE") == "true";
+        var seedDatabase = Environment.GetEnvironmentVariable("SEED_DATABASE") == "true";
+        Console.WriteLine($"Checking WIPEDB: {wipeDatabase}, SAFEMODE: {safeMode}");
 
         if (!safeMode && wipeDatabase)
         {
             dbCtx.Database.EnsureDeleted();
             dbCtx.Database.EnsureCreated();
+        }
 
+        if (!safeMode && migrateDatabase) dbCtx.Database.Migrate();
+
+        if (!safeMode && seedDatabase)
+        {
             List<string[]> sites = [];
             var words = new string[] { };
 

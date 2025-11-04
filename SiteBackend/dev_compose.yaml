@@ -10,6 +10,9 @@ services:
       SE_DB_CONN: "host=${SE_DEV_DB_HOST};port=${SE_DEV_DB_PORT};database=${SE_DEV_DB_NAME};username=${SE_DEV_DB_USER};password=${SE_DEV_DB_PASS};"
       SITE_DB_CONN: "host=${SITE_DEV_DB_HOST};port=${SITE_DEV_DB_PORT};database=${SITE_DEV_DB_NAME};username=${SITE_DEV_DB_USER};password=${SITE_DEV_DB_PASS};"
       SAFE_MODE: false
+      WIPE_ON_START: false
+      MIGRATE: false
+      SEED_DATABASE: false
       ASPNETCORE_ENVIRONMENT: Development
       API_PORT: ${DEV_PORT}
     volumes:
@@ -18,6 +21,7 @@ services:
       - ${DEV_PORT}:${DEV_PORT}
     networks:
       - zm-dev-tunnel-net
+      - zm-dev-be-net
       - zm-dev-db-net
       - zm-dev-cache-net
   
@@ -34,8 +38,6 @@ services:
       - ${CLOUDFLARED_DEV_TOKEN}
     networks:
       - zm-dev-tunnel-net
-    volumes:
-      - ./COVFEFE/config.yml:/etc/cloudflared/config.yml:ro
   ## Databases
   site-db-dev:
     image: postgres:latest
@@ -67,11 +69,24 @@ services:
       - DEV-se-db:/var/lib/postgresql/data
     networks:
       - zm-dev-db-net
+    ## Crawler
+  crawler-dev:
+    image: crawler:dev
+    restart: always
+    build:
+      context: ../Workers/go-spider
+      dockerfile: Dockerfile
+    ports:
+      - 9900:9900
+    networks:
+      - zm-dev-be-net
 
 networks:
   zm-dev-tunnel-net:
     driver: bridge
   zm-dev-db-net:
+    driver: bridge
+  zm-dev-be-net:
     driver: bridge
   zm-dev-cache-net:
     driver: bridge

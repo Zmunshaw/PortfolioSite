@@ -65,11 +65,10 @@ type BackendMediaEntry struct {
 	Language    *string `json:"Language,omitempty"`
 }
 
-// TODO: This is AI Generated - Probably broken in some way -- READ IT
 func TransformToBackendModel(original Sitemap) BackendSitemap {
 	newSitemap := BackendSitemap{
 		Location:     original.Hostname,
-		LastModified: time.Now(), // or parsed from XML
+		LastModified: time.Now(),
 		IsMapped:     false,
 	}
 
