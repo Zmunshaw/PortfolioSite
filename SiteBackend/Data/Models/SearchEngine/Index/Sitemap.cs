@@ -69,7 +69,10 @@ public class Url
         if (sitemap != null)
             SitemapID = sitemap.SitemapID;
         if (page != null)
+        {
             PageID = page.PageID;
+            Page = page;
+        }
     }
 
     [Key] public int UrlID { get; set; }

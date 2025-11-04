@@ -120,16 +120,14 @@ public class CrawlManager : BackgroundService
             }
 
             var scraperResult = results.First();
+
             page.LastCrawlAttempt = DateTime.UtcNow;
-            page.Outlinks = scraperResult.Links.Select(lnk => new Url(lnk)).ToList();
+            //page.Outlinks = scraperResult.Links.Select(lnk => new Url(lnk)).ToList();
             page.LastCrawled = DateTime.UtcNow;
             page.Content.Title = scraperResult.Title ?? "";
             page.Content.Description = scraperResult.Description ?? "";
             page.Content.Text = scraperResult.Content ?? "";
 
-            _logger.LogDebug(
-                $"Title {scraperResult.Title ?? "None"} and Description {scraperResult.Description ?? "None"}, " +
-                $"link count: {(scraperResult.Links.Count == 0 ? "Empty" : scraperResult.Links.Count.ToString())}");
             page.LastCrawled = DateTime.UtcNow;
             await pageRepo.UpdatePageAsync(page);
 
