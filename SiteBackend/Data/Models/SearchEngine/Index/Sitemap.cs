@@ -28,26 +28,31 @@ public class Sitemap
 
     public Sitemap(Website website, string? location = null, List<Url>? urlSet = null)
     {
+        WebsiteID = website.WebsiteID;
         Website = website;
         Location = location ?? website.Host;
-        UrlSet = urlSet ?? [..website.Pages.Select(x => x.Url).ToList()];
+        UrlSet = urlSet ?? [];
     }
 
     [Key] public int SitemapID { get; set; }
 
+    // Foreign key to Website (one-to-one)
+    public int WebsiteID { get; set; }
     public Website Website { get; set; }
 
-    [Required] public string? Location { get; set; }
+    [Required] public string Location { get; set; }
 
     public DateTime? LastModified { get; set; }
 
-    public int? ParentSitemapId { get; set; } // FK
+    // Self-referencing foreign key for parent sitemap
+    public int? ParentSitemapId { get; set; }
+    public Sitemap? ParentSitemap { get; set; }
 
-    public Sitemap? ParentSitemap { get; set; } // Navigation
-    public List<Sitemap>? SitemapIndex { get; set; }
+    // Child sitemaps
+    public List<Sitemap> SitemapIndex { get; set; } = new();
 
-
-    public List<Url>? UrlSet { get; set; }
+    // URLs in this sitemap
+    public List<Url> UrlSet { get; set; } = new();
 
     public bool IsMapped { get; set; } = false;
 }
@@ -61,12 +66,21 @@ public class Url
     public Url(string location, Sitemap? sitemap = null, Page? page = null)
     {
         Location = location;
+        if (sitemap != null)
+            SitemapID = sitemap.SitemapID;
+        if (page != null)
+            PageID = page.PageID;
     }
 
     [Key] public int UrlID { get; set; }
 
+    // Foreign key to Sitemap (many-to-one)
+    public int? SitemapID { get; set; }
     public Sitemap? Sitemap { get; set; }
-    public Page? Page { get; set; }
+
+    // Foreign key to Page (one-to-one)
+    public int PageID { get; set; }
+    public Page Page { get; set; }
 
     [Required] public string Location { get; set; }
 
@@ -76,22 +90,27 @@ public class Url
 
     [Range(0.0, 1.0)] public float Priority { get; set; } = 0.5f;
 
-    public List<MediaEntry>? Media { get; set; }
+    // One-to-many with MediaEntry
+    public List<MediaEntry> Media { get; set; } = new();
 }
 
-// polymorphic table
+// Polymorphic table with discriminator
 public abstract class MediaEntry
 {
     [Key] public int MediaEntryID { get; set; }
 
-    public string Location { get; set; } = default!;
+    [Required] public string Location { get; set; } = default!;
 
     public MediaType Type { get; set; }
+
+    // Foreign key to Url
+    public int UrlID { get; set; }
+    public Url Url { get; set; }
 }
 
 public class ImageEntry : MediaEntry
 {
-    public string Location { get; set; } = default!;
+    // Inherits Location from MediaEntry - don't redefine it
 }
 
 public class VideoEntry : MediaEntry
@@ -115,7 +134,6 @@ public class VideoEntry : MediaEntry
     public DateTime? PublicationDate { get; set; }
 
     public string? Restrictions { get; set; }
-
 
     public string? Platform { get; set; }
 

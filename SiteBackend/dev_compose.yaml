@@ -11,6 +11,8 @@ services:
       SITE_DB_CONN: "host=${SITE_DEV_DB_HOST};port=${SITE_DEV_DB_PORT};database=${SITE_DEV_DB_NAME};username=${SITE_DEV_DB_USER};password=${SITE_DEV_DB_PASS};"
       SAFE_MODE: false
       WIPE_ON_START: false
+      MIGRATE: false
+      SEED_DATABASE: false
       ASPNETCORE_ENVIRONMENT: Development
       API_PORT: ${DEV_PORT}
     volumes:

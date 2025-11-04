@@ -62,14 +62,17 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
 
     #region DB Model Rules
 
-    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        var dbconn = Environment.GetEnvironmentVariable("SE_DB_CONN") ?? "FUCK";
+        // Only configure if not already configured (respects dependency injection)
+        if (optionsBuilder.IsConfigured)
+            return;
 
-        var optionsBuilder = new DbContextOptionsBuilder<SearchEngineCtx>();
+        var dbconn = Environment.GetEnvironmentVariable("SE_DB_CONN")
+                     ?? throw new InvalidOperationException("SE_DB_CONN environment variable is not set");
+
         optionsBuilder.UseNpgsql(dbconn,
-            npgsqlOptions => npgsqlOptions
-                .UseVector());
+            npgsqlOptions => npgsqlOptions.UseVector());
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -77,47 +80,76 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
         // Add pgVector for search
         modelBuilder.HasPostgresExtension("vector");
 
-        // (Co)Dependant relationships
-        // Content Depends on page
-        modelBuilder.Entity<Content>()
-            .HasOne(c => c.Page)
-            .WithOne(p => p.Content)
-            .HasForeignKey<Content>(ct => ct.ContentID);
+        // Website -> Sitemap (one-to-one)
+        modelBuilder.Entity<Website>()
+            .HasOne(w => w.Sitemap)
+            .WithOne(s => s.Website)
+            .HasForeignKey<Sitemap>(s => s.WebsiteID);
 
-        modelBuilder.Entity<Url>()
-            .HasOne(p => p.Page)
-            .WithOne(p => p.Url)
-            .HasForeignKey<Url>(url => url.UrlID);
+        // Website -> Page (one-to-many)
+        modelBuilder.Entity<Website>()
+            .HasMany(w => w.Pages)
+            .WithOne(p => p.Website)
+            .HasForeignKey(p => p.WebsiteID)
+            .OnDelete(DeleteBehavior.Cascade);
 
+        // Page -> Url (one-to-one)
+        modelBuilder.Entity<Page>()
+            .HasOne(p => p.Url)
+            .WithOne(u => u.Page)
+            .HasForeignKey<Url>(u => u.PageID)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Sitemap -> Url (one-to-many)
         modelBuilder.Entity<Sitemap>()
-            .HasOne(sm => sm.Website)
-            .WithOne(ws => ws.Sitemap)
-            .HasForeignKey<Sitemap>(sm => sm.SitemapID);
+            .HasMany(s => s.UrlSet)
+            .WithOne(u => u.Sitemap)
+            .HasForeignKey(u => u.SitemapID)
+            .OnDelete(DeleteBehavior.SetNull);
 
-        // For paragraph meaning
+        // Url -> MediaEntry (one-to-many)
+        modelBuilder.Entity<Url>()
+            .HasMany(u => u.Media)
+            .WithOne(m => m.Url)
+            .HasForeignKey(m => m.UrlID)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Page -> Content (one-to-one)
+        modelBuilder.Entity<Page>()
+            .HasOne(p => p.Content)
+            .WithOne(c => c.Page)
+            .HasForeignKey<Content>(c => c.PageID);
+
+        // Content -> TextEmbedding (one-to-many)
+        modelBuilder.Entity<Content>()
+            .HasMany(c => c.Embeddings)
+            .WithOne(te => te.Content)
+            .HasForeignKey(te => te.ContentID);
+
+        // TextEmbedding vector columns
         modelBuilder.Entity<TextEmbedding>()
             .Property(te => te.DenseEmbedding)
             .HasColumnType("vector(768)");
-        // For keyword meaning
+
         modelBuilder.Entity<TextEmbedding>()
             .Property(te => te.SparseEmbedding)
             .HasColumnType("sparsevec");
 
-        // Establish polymorphic nature of MediaEntry table
+        // Polymorphic MediaEntry table with discriminator
         modelBuilder.Entity<MediaEntry>()
             .HasDiscriminator<MediaType>("Type")
             .HasValue<ImageEntry>(MediaType.Image)
             .HasValue<VideoEntry>(MediaType.Video)
             .HasValue<NewsEntry>(MediaType.News);
 
-        // Define recursive sitemap relationships
+        // Recursive sitemap relationships
         modelBuilder.Entity<Sitemap>()
             .HasOne(s => s.ParentSitemap)
             .WithMany(s => s.SitemapIndex)
             .HasForeignKey(s => s.ParentSitemapId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Fix non-UTC errors
+        // DateTime UTC conversions
         modelBuilder.Entity<Sitemap>()
             .Property(lm => lm.LastModified)
             .HasConversion(
@@ -128,6 +160,7 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
                     ? DateTime.SpecifyKind(lm.Value, DateTimeKind.Utc)
                     : null
             );
+
         modelBuilder.Entity<Url>()
             .Property(lm => lm.LastModified)
             .HasConversion(
@@ -138,6 +171,7 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
                     ? DateTime.SpecifyKind(lm.Value, DateTimeKind.Utc)
                     : null
             );
+
         modelBuilder.Entity<VideoEntry>()
             .Property(pd => pd.PublicationDate)
             .HasConversion(
@@ -148,6 +182,7 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
                     ? DateTime.SpecifyKind(pd.Value, DateTimeKind.Utc)
                     : null
             );
+
         modelBuilder.Entity<NewsEntry>()
             .Property(pd => pd.PublicationDate)
             .HasConversion(
@@ -167,12 +202,9 @@ public class SearchEngineCtxDesignTimeFactory : IDesignTimeDbContextFactory<Sear
 {
     public SearchEngineCtx CreateDbContext(string[] args)
     {
-        // TODO: Fix this
-        var connectionString =
-            "host=localhost;port=1288;database=se-dev-db;username=se-dev-master;password=se-dev-pass;";
-        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
-            connectionString =
-                "host=localhost;port=5021;database=se-prod-db;username=se-prod-master;password=se-prod-pass;";
+        var connectionString = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production"
+            ? "host=localhost;port=5021;database=se-prod-db;username=se-prod-master;password=se-prod-pass;"
+            : "host=localhost;port=1288;database=se-dev-db;username=se-dev-master;password=se-dev-pass;";
 
         var optionsBuilder = new DbContextOptionsBuilder<SearchEngineCtx>();
         optionsBuilder.UseNpgsql(connectionString,

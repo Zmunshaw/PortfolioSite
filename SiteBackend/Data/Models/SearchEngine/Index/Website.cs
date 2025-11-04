@@ -19,7 +19,9 @@ public class Website
 
     [Key] public int WebsiteID { get; set; }
 
-    public Sitemap Sitemap { get; set; }
+    public int? SitemapID { get; set; }
+    public Sitemap? Sitemap { get; set; }
+
     public string Host { get; set; }
 
     public List<Page> Pages { get; set; } = new();
@@ -33,6 +35,7 @@ public class Page
 
     public Page(string url, Website website, Content? content = null)
     {
+        WebsiteID = website.WebsiteID;
         Website = website;
         Content = content ?? new(this, "", "");
         Url = new(url, website.Sitemap, this);
@@ -40,17 +43,24 @@ public class Page
 
     [Key] public int PageID { get; set; }
 
-    public Url Url { get; set; }
-    public Content Content { get; set; }
+    // One-to-one with Url
+    public int? UrlID { get; set; }
+    public Url? Url { get; set; }
+
+    // One-to-one with Content
+    public int? ContentID { get; set; }
+    public Content? Content { get; set; }
 
     public DateTime? LastCrawlAttempt { get; set; }
     public int CrawlAttempts { get; set; } = 0;
     public DateTime? LastCrawled { get; set; }
 
-    public List<Url>? Outlinks { get; set; } = new();
-    public List<Url>? InLinks { get; set; } = new();
+    // One-to-many relationships (outlinks and inlinks point to other Urls, not Pages)
+    public List<Url> Outlinks { get; set; } = new();
+    public List<Url> InLinks { get; set; } = new();
 
-    // FKs
+    // Foreign key to Website
+    public int WebsiteID { get; set; }
     public Website Website { get; set; }
 }
 
@@ -62,6 +72,7 @@ public class Content
 
     public Content(Page page, string? title = null, string? text = null)
     {
+        PageID = page.PageID;
         Page = page;
         Title = title;
         Text = text;
@@ -69,6 +80,8 @@ public class Content
 
     [Key] public int ContentID { get; set; }
 
+    // Foreign key to Page (one-to-one)
+    public int PageID { get; set; }
     public Page Page { get; set; }
 
     public string? ContentHash { get; set; }
@@ -103,7 +116,10 @@ public class TextEmbedding
 
     [Key] public int TextEmbeddingID { get; set; }
 
+    // Foreign key to Content
+    public int? ContentID { get; set; }
     public Content? Content { get; set; }
+
     public string? TextHash { get; set; }
 
     // Embeddings
