@@ -23,54 +23,40 @@ public class SearchRepo : ISearchRepo
         _aiService = aiService;
     }
 
-    // TODO: EF.Functions.Like Says it can possibly throw, figure that out.
-    // TODO: This isnt the greatest algo, maybe normalize/average the results per chunk of context on vectors or smthn
-    // TODO: DefaultIfEmpty(maxVal) is fine for now but it invalidates keywording fallback during scoring(i think).
     public async Task<IEnumerable<DTOSearchResult>> GetSearchResults(DTOSearchRequest request)
     {
         await using var ctx = await _ctxFactory.CreateDbContextAsync();
 
-        // OKAY, this is a lot but the first SELECT gets semantic context for page, the approximate keywording and exact keywords
-        // The first WHERE checks if it fits through one of the filters (is it close enough in meaning or keywording)
-        // the second SELECT assigns weighted scores to the results
-        // FINALLY we sort the scores and then break any ties with whoever means more to the query from a context point.
-        var searchQuery = ctx.Pages.AsQueryable()
+        var results = ctx.Pages
+            .Where(p => p.Content.Embeddings.Any(e =>
+                (e.DenseEmbedding != null && e.DenseEmbedding.L2Distance(request.DenseVector) <= request.MaxDistance) ||
+                (e.SparseEmbedding != null &&
+                 e.SparseEmbedding.CosineDistance(request.SparseVector) <= request.MaxDistance) ||
+                EF.Functions.Like(p.Content.Text, $"%{request.SearchQuery}%")))
             .Select(page => new
             {
                 Page = page,
-                DenseDistance = page.Content.Embeddings
-                    .Where(ct => ct.DenseEmbedding != null)
-                    .Select(ct => ct.DenseEmbedding.L2Distance(request.DenseVector))
-                    .DefaultIfEmpty(float.MaxValue) // Skip if no embeddings
-                    .Min(),
-
-                SparseDistance = page.Content.Embeddings
-                    .Where(ct => ct.SparseEmbedding != null)
-                    .Select(ct => ct.SparseEmbedding.CosineDistance(request.SparseVector))
-                    .DefaultIfEmpty(float.MaxValue) // Skip if no embeddings
-                    .Min(),
-
+                DenseMin = (float?)page.Content.Embeddings
+                    .Where(e => e.DenseEmbedding != null)
+                    .Select(e => e.DenseEmbedding.L2Distance(request.DenseVector))
+                    .Min() ?? float.MaxValue,
+                SparseMin = (float?)page.Content.Embeddings
+                    .Where(e => e.SparseEmbedding != null)
+                    .Select(e => e.SparseEmbedding.CosineDistance(request.SparseVector))
+                    .Min() ?? float.MaxValue,
                 KeywordMatch = EF.Functions.Like(page.Content.Text, $"%{request.SearchQuery}%")
             })
-            .Where(x =>
-                x.DenseDistance <= request.MaxDistance || x.SparseDistance <= request.MaxDistance || x.KeywordMatch)
-            .Select(x => new
-            {
-                x.Page,
-                ResultScore = x.DenseDistance * request.DenseWeight +
-                              x.SparseDistance * request.SparseWeight +
-                              (x.KeywordMatch ? 0.0 : request.KeywordWeight),
-                x.DenseDistance, x.SparseDistance, x.KeywordMatch
-            })
-            .OrderBy(x => x.ResultScore)
-            .ThenBy(x => x.DenseDistance);
-
-        var total = await searchQuery.CountAsync();
-        var results = await searchQuery
+            .AsEnumerable()
+            .OrderBy(x =>
+                x.DenseMin * request.DenseWeight + x.SparseMin * request.SparseWeight +
+                (x.KeywordMatch ? 0 : request.KeywordWeight))
             .Skip((request.CurrentPage - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(x => new DTOSearchResult(x.Page, x.ResultScore, x.DenseDistance, x.SparseDistance, x.KeywordMatch))
-            .ToListAsync();
+            .Select(x => new DTOSearchResult(x.Page,
+                x.DenseMin * request.DenseWeight + x.SparseMin * request.SparseWeight +
+                (x.KeywordMatch ? 0 : request.KeywordWeight),
+                x.DenseMin, x.SparseMin, x.KeywordMatch))
+            .ToList();
 
         return results;
     }
