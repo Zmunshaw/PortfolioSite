@@ -10,10 +10,6 @@ services:
       SE_DB_CONN: "host=${SE_PROD_DB_HOST};port=${SE_PROD_DB_PORT};database=${SE_PROD_DB_NAME};username=${SE_PROD_DB_USER};password=${SE_PROD_DB_PASS};"
       SITE_DB_CONN: "host=${SITE_PROD_DB_HOST};port=${SITE_PROD_DB_PORT};database=${SITE_PROD_DB_NAME};username=${SITE_PROD_DB_USER};password=${SITE_PROD_DB_PASS};"
       ASPNETCORE_ENVIRONMENT: Production
-      SAFE_MODE: true
-      WIPE_ON_START: false
-      MIGRATE: false
-      SEED_DATABASE: false
       API_PORT: ${PROD_PORT}
     volumes:
       - ./Data/SeedData:/app/data
