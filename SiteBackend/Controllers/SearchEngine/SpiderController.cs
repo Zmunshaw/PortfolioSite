@@ -35,9 +35,8 @@ public class SpiderController : ControllerBase
     public async Task<IActionResult> Scrape()
     {
         _logger.LogInformation("Received scrape request.....");
-        var pages = await _crawlerService.GetEmptyPagesAsync();
-        pages = pages.ToList();
-        _logger.LogDebug($"Got {pages.Count()} pages for scraping.");
+        var pages = _crawlerService.GetEmptyPagesAsync().Result.ToList();
+        _logger.LogDebug($"Got {pages.Count} pages for scraping.");
         // TODO: Should return some result like a count of unique urls or smthn
         return Ok();
     }

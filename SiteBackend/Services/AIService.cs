@@ -11,7 +11,6 @@ public class AIService : IAIService
 
     public AIService(ILogger<AIService> logger, IAiClient aiClient)
     {
-        logger.LogDebug("Starting AI service");
         _logger = logger;
         _aiClient = aiClient;
     }
