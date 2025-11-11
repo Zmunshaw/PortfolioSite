@@ -1,7 +1,7 @@
 ﻿name: PROD_SiteStack
 services:
   zacharymunshaw-prod:
-    image: site-backend:prod
+    image: site-backend
     restart: always
     build:
       context: .
@@ -9,14 +9,8 @@ services:
     environment:
       SE_DB_CONN: "host=${SE_PROD_DB_HOST};port=${SE_PROD_DB_PORT};database=${SE_PROD_DB_NAME};username=${SE_PROD_DB_USER};password=${SE_PROD_DB_PASS};"
       SITE_DB_CONN: "host=${SITE_PROD_DB_HOST};port=${SITE_PROD_DB_PORT};database=${SITE_PROD_DB_NAME};username=${SITE_PROD_DB_USER};password=${SITE_PROD_DB_PASS};"
-      AI_HOST: "http://172.17.0.1"
-      AI_PORT: "1233"
       ASPNETCORE_ENVIRONMENT: Production
       API_PORT: ${PROD_PORT}
-      SAFE_MODE: true
-      WIPE_ON_START: false
-      MIGRATE: false
-      SEED_DATABASE: false
     volumes:
       - ./Data/SeedData:/app/data
     ports:
@@ -57,7 +51,7 @@ services:
       - zm-prod-db-net
   se-db-prod:
     image: pgvector/pgvector:pg16
-    container_name: se-prod-db
+    container_name: search-engine-database
     restart: always
     command: -p ${SE_PROD_DB_PORT}
     ports:
@@ -70,20 +64,6 @@ services:
       - PROD-se-db:/var/lib/postgresql/data
     networks:
       - zm-prod-db-net
-  anythingllm-prod:
-    image: mintplexlabs/anythingllm:latest
-    container_name: anythingllm
-    ports:
-      - "3001:3001"
-    environment:
-      - STORAGE_DIR=/app/server/storage
-    volumes:
-      - PROD-llm:/app/server/storage
-    cap_add:
-      - SYS_ADMIN
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    restart: unless-stopped
 
 networks:
   zm-prod-tunnel-net:
@@ -97,4 +77,3 @@ volumes:
   PROD-site-db:
   PROD-se-db:
   PROD-cache:
-  PROD-llm:

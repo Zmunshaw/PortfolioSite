@@ -1,23 +1,20 @@
 ﻿name: DEV_SiteStack
 services:
   zacharymunshaw-dev:
-    image: site-backend:dev
+    image: site-backend
     restart: always
     build:
-      context: ./
+      context: .
       dockerfile: Dockerfile
     environment:
       SE_DB_CONN: "host=${SE_DEV_DB_HOST};port=${SE_DEV_DB_PORT};database=${SE_DEV_DB_NAME};username=${SE_DEV_DB_USER};password=${SE_DEV_DB_PASS};"
       SITE_DB_CONN: "host=${SITE_DEV_DB_HOST};port=${SITE_DEV_DB_PORT};database=${SITE_DEV_DB_NAME};username=${SITE_DEV_DB_USER};password=${SITE_DEV_DB_PASS};"
-      AI_HOST: "http://localai"
-      AI_PORT: "8080"
-      CRAWLER_URL: "http://crawler-dev:9900"
-      ASPNETCORE_ENVIRONMENT: Development
-      API_PORT: ${DEV_PORT}
-      SAFE_MODE: true
+      SAFE_MODE: false
       WIPE_ON_START: false
       MIGRATE: false
       SEED_DATABASE: false
+      ASPNETCORE_ENVIRONMENT: Development
+      API_PORT: ${DEV_PORT}
     volumes:
       - ./Data/SeedData:/app/data
     ports:
@@ -27,6 +24,7 @@ services:
       - zm-dev-be-net
       - zm-dev-db-net
       - zm-dev-cache-net
+  
   cloudflared-dev:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared
@@ -58,7 +56,7 @@ services:
       - zm-dev-db-net
   se-db-dev:
     image: pgvector/pgvector:pg16
-    container_name: se-dev-db
+    container_name: se-db
     restart: always
     command: -p ${SE_DEV_DB_PORT}
     ports:
@@ -74,47 +72,14 @@ services:
     ## Crawler
   crawler-dev:
     image: crawler:dev
-    hostname: crawler-dev
     restart: always
     build:
       context: ../Workers/go-spider
       dockerfile: Dockerfile
     ports:
-      - 9905:9900
-    networks:
-      - zm-dev-be-net     
-  localai:
-    # For a specific version:
-    # image: localai/localai:v3.7.0-aio-cpu
-    # For Nvidia GPUs decomment one of the following (cuda11 or cuda12):
-    # image: localai/localai:v3.7.0-aio-gpu-nvidia-cuda-11
-    # image: localai/localai:v3.7.0-aio-gpu-nvidia-cuda-12
-    # image: localai/localai:latest-aio-gpu-nvidia-cuda-11
-    image: localai/localai:latest-aio-gpu-nvidia-cuda-12
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
-      interval: 1m
-      timeout: 20m
-      retries: 5
-    ports:
-      - 8000:8080
-      - 3000:5173
-    environment:
-      - DEBUG=true
+      - 9900:9900
     networks:
       - zm-dev-be-net
-      # ...
-    volumes:
-      - DEV-llm:/usr/share/localai/backends
-      - DEV-llm:/models:cached
-    # decomment the following piece if running with Nvidia GPUs
-    deploy:
-      resources:
-         reservations:
-           devices:
-             - driver: nvidia
-               count: all
-               capabilities: [gpu]
 
 networks:
   zm-dev-tunnel-net:
@@ -130,4 +95,3 @@ volumes:
   DEV-site-db:
   DEV-se-db:
   DEV-cache:
-  DEV-llm:
