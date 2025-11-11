@@ -20,6 +20,7 @@ public class CrawlManager : BackgroundService
         _scopeFactory = scopeFactory;
         _logger = logger;
         _httpClient = httpClient;
+        _httpClient.Timeout = TimeSpan.FromSeconds(30);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

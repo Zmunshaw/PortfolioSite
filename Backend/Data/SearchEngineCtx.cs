@@ -200,11 +200,10 @@ public class SearchEngineCtx(DbContextOptions<SearchEngineCtx> options, ILogger<
 
 public class SearchEngineCtxDesignTimeFactory : IDesignTimeDbContextFactory<SearchEngineCtx>
 {
+    
     public SearchEngineCtx CreateDbContext(string[] args)
     {
-        var connectionString = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production"
-            ? "host=localhost;port=5021;database=se-prod-db;username=se-prod-master;password=se-prod-pass;"
-            : "host=localhost;port=1288;database=se-dev-db;username=se-dev-master;password=se-dev-pass;";
+        var connectionString = Environment.GetEnvironmentVariable("SE_DB_CONN");
 
         var optionsBuilder = new DbContextOptionsBuilder<SearchEngineCtx>();
         optionsBuilder.UseNpgsql(connectionString,

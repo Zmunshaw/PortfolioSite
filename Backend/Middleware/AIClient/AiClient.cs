@@ -6,17 +6,15 @@ namespace SiteBackend.Middleware.AIClient;
 
 public partial class AiClient : IAiClient
 {
-    #region Injected
-
     private readonly ILogger<AiClient> _logger;
-
-    #endregion
 
     public AiClient(ILogger<AiClient> logger)
     {
         _logger = logger;
-        // TODO: Move to a settings file or smth
-        Uri lmStudioUri = new("http://172.17.0.1:1122/v1");
+        _logger.LogInformation("Starting AI Client");
+        var aiHost = Environment.GetEnvironmentVariable("AI_HOST") ?? "http://localai";
+        var aiPort = Environment.GetEnvironmentVariable("AI_PORT") ?? "8080";
+        Uri lmStudioUri = new($"{aiHost}:{aiPort}/v1");
         var clientOptions = new OpenAIClientOptions
         {
             Endpoint = lmStudioUri
@@ -41,8 +39,8 @@ public partial class AiClient : IAiClient
     private readonly EmbeddingClient _sparseClient;
 
     // TODO: Move to a settings file or smth
-    private readonly string _defaultDenseEmbeddingModel = "text-embedding-granite-embedding-278m-multilingual";
-    private readonly string _defaultSparseEmbeddingModel = "text-embedding-splade-v3";
+    private readonly string _defaultDenseEmbeddingModel = "granite-embedding-125m-english";
+    private readonly string _defaultSparseEmbeddingModel = "splade-model";
 
     #endregion
 }
