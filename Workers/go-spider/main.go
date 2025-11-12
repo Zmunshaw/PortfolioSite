@@ -1,12 +1,13 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"os"
+    "encoding/json"
+    "fmt"
+    "log"
+    "net/http"
+    "os"
 
-	"github.com/syumai/workers"
+    "github.com/syumai/workers"
 )
 
 var (
@@ -16,7 +17,7 @@ var (
 )
 
 func main() {
-	fmt.Printf("API Key: %s BACKEND_URL: %s SCRAPE_WORKER_URL: %s\n", ApiKey, BackendURL, ScrapeWorkerUrl)
+    fmt.Printf("API Key: %s BACKEND_URL: %s SCRAPE_WORKER_URL: %s\n", ApiKey, BackendURL, ScrapeWorkerUrl)
 
 	http.HandleFunc("/scrape", func(w http.ResponseWriter, req *http.Request) {
 		scrapeRequestHandler(w, req)
@@ -26,7 +27,22 @@ func main() {
 		mapRequestHandler(w, req)
 	})
 
-	workers.Serve(nil)
+    // Run mode: if not in a Workers environment, start a local HTTP server
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "9900"
+    }
+
+    if os.Getenv("CF_WORKERS") == "1" {
+        workers.Serve(nil)
+        return
+    }
+
+    addr := ":" + port
+    fmt.Printf("Starting local crawler server on %s\n", addr)
+    if err := http.ListenAndServe(addr, nil); err != nil {
+        log.Fatalf("server failed: %v", err)
+    }
 }
 
 func scrapeRequestHandler(w http.ResponseWriter, req *http.Request) {

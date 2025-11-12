@@ -1,0 +1,20 @@
+@API_HostAddress = http://localhost:1234
+
+
+### Submit a test sitemap
+POST {{API_HostAddress}}/indexer/submit-sitemap
+Accept: application/json
+Content-Type: application/json
+
+{
+  "location": "http://example.com/sitemap.xml",
+  "lastModified": "2025-10-18T12:00:00Z",
+  "pages": [
+    {
+      "location": "http://example.com/page1",
+      "lastModified": "2025-10-18T12:00:00Z",
+      "changeFrequency": "Daily",
+      "priority": 0.8
+    }
+  ]
+}

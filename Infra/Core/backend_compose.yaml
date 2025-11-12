@@ -1,0 +1,24 @@
+name: CORE_PORTFOLIO_STACK
+
+services:
+  local-ai:
+    image: ghcr.io/lmstudio-ai/lms:latest
+    container_name: local-ai
+    restart: always
+    ports:
+      - 1122:1122
+    environment:
+      - LMSTUDIO_LOG_LEVEL=info
+    volumes:
+      - ../Sample/Data/lmstudio:/data
+    networks:
+      - core-be-net
+
+networks:
+  core-tunnel-net:
+    driver: bridge
+  core-db-net:
+    driver: bridge
+  core-be-net:
+    driver: bridge
+    name: core-be-net
