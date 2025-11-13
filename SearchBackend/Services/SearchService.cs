@@ -32,7 +32,7 @@ public class SearchService : ISearchService
         {
             (searchRequest.DenseVector, searchRequest.SparseVector) = 
                 await VectorizeQuery(searchRequest.SearchQuery);
-            return await _searchRepo.GetSearchResults(searchRequest);
+            results = await _searchRepo.GetSearchResults(searchRequest);
         }
         catch (OperationCanceledException ex)
         {
@@ -44,6 +44,13 @@ public class SearchService : ISearchService
             _logger.LogError(ex, "Search failed for query: {Query}", searchRequest.SearchQuery);
             throw;
         }
+
+        if (!results.Any())
+        {
+            _logger.LogWarning("No results found for query: {Query}", searchRequest.SearchQuery);    
+        }
+        
+        return results;
     }
 
     private async Task<(Vector, SparseVector)> VectorizeQuery(string query)
