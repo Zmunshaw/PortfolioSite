@@ -55,10 +55,16 @@ public class EmbeddingManager : BackgroundService
                 MaxResultsPerPage, currentPage);
         
         var enumerable = updateList.ToArray();
+        
         if (enumerable.Length != 0)
+        {
             _logger.LogDebug("Found {ContentCount} pages that need new embeddings", enumerable.Length);
+        }
         else
+        {
             _logger.LogWarning("Couldn't find new pages to embed");
+            return;
+        }
 
         foreach (var content in enumerable)
         {
