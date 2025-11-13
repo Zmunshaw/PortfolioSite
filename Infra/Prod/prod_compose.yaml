@@ -11,7 +11,7 @@ services:
       SITE_DB_CONN: "host=${SITE_PROD_DB_HOST};port=${SITE_PROD_DB_PORT};database=${SITE_PROD_DB_NAME};username=${SITE_PROD_DB_USER};password=${SITE_PROD_DB_PASS};"
       CRAWLER_URL: "http://crawler-prod:9900"
       AI_ENDPOINT: ${AI_ENDPOINT:-http://local-ai:1122/v1}
-      AI_DENSE_MODEL: ${AI_DENSE_MODEL:-text-embedding-granite-embedding-278m-multilingual}
+      AI_DENSE_MODEL: ${AI_DENSE_MODEL:-granite-embedding-278m-multilingual}
       AI_SPARSE_MODEL: ${AI_SPARSE_MODEL:-text-embedding-splade-v3}
       ASPNETCORE_ENVIRONMENT: Production
       API_PORT: ${PROD_PORT}

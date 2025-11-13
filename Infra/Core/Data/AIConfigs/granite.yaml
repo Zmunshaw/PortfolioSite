@@ -1,0 +1,19 @@
+name: granite-embedding-278m-multilingual
+model: ibm-granite/granite-embedding-278m-multilingual
+backend: cuda12-transformers
+embeddings: true
+cuda: true
+f16: true
+gpu_memory_utilization: 0.9
+threads: 4
+debug: false
+
+environment:
+  - CUDA_VISIBLE_DEVICES=0  # use the 3060
+
+# tuning
+max_model_len: 8192
+gpu_layers: null
+mmap: true
+low_vram: false
+trust_remote_code: true

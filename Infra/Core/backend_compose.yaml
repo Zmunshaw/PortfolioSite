@@ -2,23 +2,27 @@ name: CORE_PORTFOLIO_STACK
 
 services:
   local-ai:
-    image: ghcr.io/lmstudio-ai/lms:latest
+    image: localai/localai:latest-aio-gpu-nvidia-cuda-12
     container_name: local-ai
     restart: always
     ports:
-      - 1122:1122
+      - 8000:8080
     environment:
-      - LMSTUDIO_LOG_LEVEL=info
+      - MODELS_PATH=/models
     volumes:
-      - ../Sample/Data/lmstudio:/data
+      - ./Data/localai/models:/models:cached
+      - ./Data/localai/data:/usr/share/localai/backends:cached
     networks:
       - core-be-net
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
 networks:
-  core-tunnel-net:
-    driver: bridge
-  core-db-net:
-    driver: bridge
   core-be-net:
     driver: bridge
     name: core-be-net

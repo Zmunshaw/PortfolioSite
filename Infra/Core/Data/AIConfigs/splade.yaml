@@ -1,0 +1,159 @@
+name: text-embedding-splade-v3
+model: naver/splade-v3
+description: "SPLADE v3 - Sparse Lexical and Expansion Model for efficient text retrieval"
+usage: "Text embeddings for semantic search, document retrieval, and similarity matching"
+embeddings: true
+f16: true 
+backend: cuda12-transformers
+cuda: true
+trust_remote_code: true
+enforce_eager: true  # Allow graph optimizations
+
+environment:
+  - CUDA_VISIBLE_DEVICES=0  # use the 3060
+
+# Model Parameters
+parameters:
+  model: naver/splade-v3
+  language: ""
+  translate: false
+  n: 0
+  temperature: 0.0
+  top_p: 1.0 
+  top_k: 0
+  max_tokens: 256
+  echo: false
+  batch: 16 
+  ignore_eos: false
+  repeat_penalty: 0
+  repeat_last_n: 0
+  n_keep: 0
+  frequency_penalty: 0
+  presence_penalty: 0
+  tfz: 1
+  typical_p: 1
+  seed: 42
+  negative_prompt: ""
+  rope_freq_base: 0
+  rope_freq_scale: 0
+  negative_prompt_scale: 0
+  clip_skip: 0
+  tokenizer: ""
+
+threads: 8
+gpu_layers: -1
+gpu_memory_utilization: 0.9
+flash_attention: false  # Enable if GPU supports (A100, H100, RTX 40xx), 3060 mean no, but might change if you use the 5070ti
+no_kv_offloading: false
+dtype: "float16"
+
+context_size: 512 
+max_model_len: 512
+mmap: true
+mmlock: false
+low_vram: false
+swap_space: 0
+prompt_cache_all: true 
+prompt_cache_ro: false
+prompt_cache_path: "./cache/splade_embeddings"
+
+cache_type_k: "fp16"
+cache_type_v: "fp16"
+
+tensor_parallel_size: 0  # Set to 2 if you feel like wasting the potential of the 5070ti...
+numa: false
+
+grpc:
+  attempts: 3
+  attempts_sleep_time: 1000
+
+trimspace: ["  ", "\n", "\t", "\r"]
+trimsuffix: ["\n", " "]
+stopwords: []
+cutstrings: []
+extract_regex: []
+
+reranking: false
+grammar: ""
+function:
+  disable_no_action: false
+  grammar:
+    parallel_calls: false
+    disable_parallel_new_lines: false
+    mixed_mode: false
+    no_mixed_free_string: false
+    disable: false
+    prefix: ""
+    expect_strings_after_json: false
+    properties_order: ""
+    schema_type: ""
+    triggers: []
+  no_action_function_name: ""
+  no_action_description_name: ""
+  response_regex: []
+  json_regex_match: []
+  argument_regex: []
+  argument_regex_key_name: ""
+  argument_regex_value_name: ""
+  replace_function_results: []
+  replace_llm_results: []
+  capture_llm_results: []
+  function_name_key: ""
+  function_arguments_key: ""
+
+debug: false
+disable_log_stats: false
+
+rms_norm_eps: 0
+ngqa: 0
+mirostat: 0
+mirostat_eta: 0.1
+mirostat_tau: 5
+lora_adapter: ""
+lora_base: ""
+lora_adapters: []
+lora_scales: []
+lora_scale: 0
+draft_model: ""
+n_draft: 0
+limit_mm_per_prompt:
+  image: 0
+  video: 0
+  audio: 0
+mmproj: ""
+rope_scaling: ""
+type: ""
+yarn_ext_factor: 0
+yarn_attn_factor: 0
+yarn_beta_fast: 0
+yarn_beta_slow: 0
+cfg_scale: 0
+
+template:
+  chat: ""
+  chat_message: ""
+  completion: ""
+  edit: ""
+  function: ""
+  use_tokenizer_template: false
+  join_chat_messages_by_character: null
+  multimodal: ""
+  jinja_template: false
+  reply_prefix: ""
+
+roles: {}
+known_usecases:
+  - FLAG_ANY
+  - "text-embedding"
+  - "semantic-search"
+  - "document-retrieval"
+
+pipeline:
+  tts: ""
+  llm: ""
+  transcription: ""
+  vad: ""
+
+feature_flags:
+  enable_sparse_embeddings: true
+  optimize_for_retrieval: true

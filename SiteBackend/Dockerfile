@@ -7,7 +7,8 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["SiteBackend/SiteBackend.csproj", "SiteBackend/"]
 RUN dotnet restore "SiteBackend/SiteBackend.csproj"
-COPY . .
+# Copy only the backend project folder to avoid sending unrelated repo data into the build context
+COPY SiteBackend/. SiteBackend/
 WORKDIR "/src/SiteBackend"
 RUN dotnet build "./SiteBackend.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
