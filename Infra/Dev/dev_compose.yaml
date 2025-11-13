@@ -3,6 +3,7 @@ services:
   zacharymunshaw-dev:
     image: site-backend:dev
     restart: always
+    hostname: zacharymunshaw-dev
     build:
       context: ../../
       dockerfile: ./Infra/Dev/Search_Dockerfile

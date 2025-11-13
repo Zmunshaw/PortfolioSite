@@ -33,6 +33,8 @@ public class SearchRepo : ISearchRepo
                 (e.SparseEmbedding != null &&
                  e.SparseEmbedding.CosineDistance(request.SparseVector) <= request.MaxDistance) ||
                 EF.Functions.Like(p.Content.Text, $"%{request.SearchQuery}%")))
+            .Include(pg => pg.Content)
+            .Include(pg => pg.Url)
             .Select(page => new
             {
                 Page = page,
@@ -52,10 +54,18 @@ public class SearchRepo : ISearchRepo
                 (x.KeywordMatch ? 0 : request.KeywordWeight))
             .Skip((request.CurrentPage - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(x => new DTOSearchResult(x.Page,
-                x.DenseMin * request.DenseWeight + x.SparseMin * request.SparseWeight +
-                (x.KeywordMatch ? 0 : request.KeywordWeight),
-                x.DenseMin, x.SparseMin, x.KeywordMatch))
+            .Select(x => new DTOSearchResult
+            {
+                ResultPage = x.Page,
+                ResultTitle = x.Page.Content.Title,
+                ResultDescription = x.Page.Content.Description,
+                ResultUrl = x.Page.Url.Location,
+                ResultScore = x.DenseMin * request.DenseWeight + x.SparseMin * request.SparseWeight +
+                              (x.KeywordMatch ? 0 : request.KeywordWeight),
+                DenseDistance = x.DenseMin,
+                SparseDistance = x.SparseMin,
+                KeywordMatch = x.KeywordMatch
+            })
             .ToList();
 
         return results;
