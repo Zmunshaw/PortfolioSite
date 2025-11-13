@@ -1,6 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using Polly;
+using Polly.Retry;
+using SearchBackend.Repositories.SearchEngine;
 using SiteBackend.Data.SeedData;
 using SiteBackend.Database;
 using SiteBackend.Middleware.AIClient;
@@ -27,6 +30,7 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{API_PORT}");
 
 // Services.
 AddCORS(builder);
+BuildBackoffs(builder);
 AddDatabases(builder);
 AddRepositories(builder);
 AddServices(builder);
@@ -46,6 +50,24 @@ app.UseAuthorization();
 app.MapControllers(); // Maps [ApiController] classes
 
 app.Run();
+void BuildBackoffs(WebApplicationBuilder bldr)
+{
+    bldr.Services.AddResiliencePipeline("db-backoff", pipelineBuilder =>
+    {
+        pipelineBuilder
+            .AddRetry(new RetryStrategyOptions
+            {
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromMilliseconds(100),
+                BackoffType = DelayBackoffType.Exponential,
+                ShouldHandle = new PredicateBuilder()
+                    .Handle<DbUpdateConcurrencyException>()
+                    .Handle<TimeoutException>()
+                    .Handle<InvalidOperationException>()
+            });
+    });
+}
+
 
 void AddDatabases(WebApplicationBuilder bldr)
 {
