@@ -75,7 +75,7 @@ services:
   crawler-prod:
     image: crawler:prod
     restart: always
-    hostname: crawler
+    hostname: crawler-prod
     build:
       context: ../../Workers/go-spider
       dockerfile: Dockerfile
