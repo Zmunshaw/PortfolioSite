@@ -1,19 +1,24 @@
 ﻿name: PROD_SiteStack
 services:
   zacharymunshaw-prod:
-    image: site-backend
+    image: site-backend:prod
     restart: always
+    hostname: zacharymunshaw-prod
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../../
+      dockerfile: ./Infra/Dev/Search_Dockerfile
     environment:
       SE_DB_CONN: "host=${SE_PROD_DB_HOST};port=${SE_PROD_DB_PORT};database=${SE_PROD_DB_NAME};username=${SE_PROD_DB_USER};password=${SE_PROD_DB_PASS};"
       SITE_DB_CONN: "host=${SITE_PROD_DB_HOST};port=${SITE_PROD_DB_PORT};database=${SITE_PROD_DB_NAME};username=${SITE_PROD_DB_USER};password=${SITE_PROD_DB_PASS};"
       CRAWLER_URL: "http://crawler-prod:9900"
+      AI_ENDPOINT: ${AI_ENDPOINT:-http://local-ai:8080/v1}
+      AI_DENSE_MODEL: ${AI_DENSE_MODEL:-granite-embedding-278m-multilingual}
+      AI_SPARSE_MODEL: ${AI_SPARSE_MODEL:-text-embedding-splade-v3}
+      SAFE_MODE: ${SAFE_MODE:-true}
       ASPNETCORE_ENVIRONMENT: Production
       API_PORT: ${PROD_PORT}
     volumes:
-      - ./Data/SeedData:/app/data
+      - ../../SiteBackend/Data/SeedData:/app/data
     ports:
       - ${PROD_PORT}:${PROD_PORT}
     networks:
@@ -21,6 +26,7 @@ services:
       - zm-prod-db-net
       - zm-prod-cache-net
       - zm-prod-be-net
+      - core-be-net
   
   cloudflared-prod:
     image: cloudflare/cloudflared:latest
@@ -48,7 +54,7 @@ services:
       POSTGRES_USER: ${SITE_PROD_DB_USER}
       POSTGRES_PASSWORD: ${SITE_PROD_DB_PASS}
     volumes:
-      - PROD-site-db:/var/lib/postgresql/data
+      - ./Data/site-db:/var/lib/postgresql/data
     networks:
       - zm-prod-db-net
   se-db-prod:
@@ -63,19 +69,21 @@ services:
       POSTGRES_USER: ${SE_PROD_DB_USER}
       POSTGRES_PASSWORD: ${SE_PROD_DB_PASS}
     volumes:
-      - PROD-se-db:/var/lib/postgresql/data
+      - ./Data/se-db:/var/lib/postgresql/data
     networks:
       - zm-prod-db-net
   crawler-prod:
     image: crawler:prod
     restart: always
+    hostname: crawler
     build:
-      context: ../Workers/go-spider
+      context: ../../Workers/go-spider
       dockerfile: Dockerfile
     ports:
       - 9901:9900
     networks:
       - zm-prod-be-net
+
 
 networks:
   zm-prod-tunnel-net:
@@ -86,8 +94,9 @@ networks:
     driver: bridge
   zm-prod-be-net:
     driver: bridge
+  core-be-net:
+    external: true
+    name: core-be-net
 
 volumes:
-  PROD-site-db:
-  PROD-se-db:
   PROD-cache:

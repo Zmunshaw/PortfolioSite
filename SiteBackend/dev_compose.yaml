@@ -1,6 +1,6 @@
-﻿name: DEV_SiteStack
+﻿name: DEV_SiteBackendStack
 services:
-  zacharymunshaw-dev:
+  site-backend-dev:
     image: site-backend
     restart: always
     build:
@@ -9,6 +9,7 @@ services:
     environment:
       SE_DB_CONN: "host=${SE_DEV_DB_HOST};port=${SE_DEV_DB_PORT};database=${SE_DEV_DB_NAME};username=${SE_DEV_DB_USER};password=${SE_DEV_DB_PASS};"
       SITE_DB_CONN: "host=${SITE_DEV_DB_HOST};port=${SITE_DEV_DB_PORT};database=${SITE_DEV_DB_NAME};username=${SITE_DEV_DB_USER};password=${SITE_DEV_DB_PASS};"
+      CRAWLER_URL: "http://crawler-dev:9900"
       SAFE_MODE: false
       WIPE_ON_START: false
       MIGRATE: false
@@ -25,9 +26,9 @@ services:
       - zm-dev-db-net
       - zm-dev-cache-net
   
-  cloudflared-dev:
+  cloudflared-site-dev:
     image: cloudflare/cloudflared:latest
-    container_name: cloudflared
+    container_name: cloudflared-site-dev
     restart: always
     entrypoint: cloudflared
     command:
@@ -39,9 +40,9 @@ services:
     networks:
       - zm-dev-tunnel-net
   ## Databases
-  site-db-dev:
+  site-db-backend-dev:
     image: postgres:latest
-    container_name: site-db
+    container_name: site-backend-db
     restart: always
     command: -p ${SITE_DEV_DB_PORT}
     ports:
@@ -54,9 +55,9 @@ services:
       - DEV-site-db:/var/lib/postgresql/data
     networks:
       - zm-dev-db-net
-  se-db-dev:
+  se-db-backend-dev:
     image: pgvector/pgvector:pg16
-    container_name: se-db
+    container_name: se-backend-db
     restart: always
     command: -p ${SE_DEV_DB_PORT}
     ports:
@@ -69,9 +70,9 @@ services:
       - DEV-se-db:/var/lib/postgresql/data
     networks:
       - zm-dev-db-net
-    ## Crawler
-  crawler-dev:
-    image: crawler:dev
+  ## Crawler
+  crawler-backend-dev:
+    image: crawler:sitebackend-dev
     restart: always
     build:
       context: ../Workers/go-spider
