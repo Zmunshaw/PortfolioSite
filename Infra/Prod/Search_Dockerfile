@@ -1,26 +1,25 @@
-# Build stage
-FROM golang:latest AS build
+﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+USER $APP_UID
 WORKDIR /app
+EXPOSE 2124
+EXPOSE 2125
 
-COPY go.mod .
-COPY go.sum .
-RUN go mod download
-
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+COPY ["SearchBackend/SearchBackend.csproj", "SearchBackend/"]
+RUN dotnet restore "SiteBackend/SearchBackend.csproj"
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o app .
+WORKDIR "/src/SearchBackend"
+RUN dotnet build "./SearchBackend.csproj" -c $BUILD_CONFIGURATION -o /app/build \
+dotnet ef database update --project YourProject.csproj
 
-# Final stage
-FROM python:3.11-alpine AS run
-RUN apk --no-cache add ca-certificates gcc musl-dev libxml2-dev libxslt-dev
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "./SearchBackend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
 WORKDIR /app
+COPY --from=publish /app/publish .
 
-COPY --from=build /app/app .
-COPY --from=build /app/python ./python
-
-# Create virtual environment and install requirements
-RUN python3 -m venv ./venv && \
-    ./venv/bin/pip install --upgrade pip && \
-    ./venv/bin/pip install -r python/requirements.txt
-
-EXPOSE 9900
-CMD ["./app"]
+ENTRYPOINT ["dotnet", "SearchBackend.dll"]
