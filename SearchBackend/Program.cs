@@ -81,7 +81,6 @@ void AddControllers(WebApplicationBuilder bldr)
         .AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
 }
