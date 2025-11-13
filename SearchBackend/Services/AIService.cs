@@ -15,8 +15,6 @@ public class AIService : IAIService
         _aiClient = aiClient;
     }
 
-    #region Search
-
     /// <summary>
     ///     Use for generating vectors on a document for
     ///     <see href="https://cohere.com/llmu/what-is-semantic-search">Semantic Search</see>
@@ -63,10 +61,6 @@ public class AIService : IAIService
         return await GetSparseVectorsAsync(GetSparseSearchPrompt(query));
     }
 
-    #endregion
-
-    #region General Purpose
-
     public async Task<Vector> GetDenseVectorsAsync(string query)
     {
         return new Vector(await _aiClient.GetDenseEmbeddingAsync(query));
@@ -77,18 +71,12 @@ public class AIService : IAIService
         return new SparseVector(await _aiClient.GetSparseEmbeddingAsync(query));
     }
 
-    #endregion
-
-    #region Prompts
-
-    // TODO: figure out if granite-embedding wants a prompt
     private string GetDenseEmbeddingPrompt(string text)
     {
         var prompt = $"{text}";
         return prompt;
     }
 
-    // TODO: figure out if granite-embedding wants a prompt
     private string GetDenseSearchPrompt(string query)
     {
         return $"{query}";
@@ -105,6 +93,4 @@ public class AIService : IAIService
         var prompt = $"{query}";
         return prompt;
     }
-
-    #endregion
 }
