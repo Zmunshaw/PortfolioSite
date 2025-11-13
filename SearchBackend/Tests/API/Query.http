@@ -1,4 +1,4 @@
-@API_HostAddress = http://localhost:1234
+@API_HostAddress = http://localhost:2125
 
 ### Search for gibberish (likely no results)
 GET {{API_HostAddress}}/search?q=sadsad
