@@ -89,10 +89,11 @@ public class ContentRepo(ILogger<ContentRepo> logger, IDbContextFactory<SearchEn
             {
                 await using var ctx = await ctxFactory.CreateDbContextAsync(ct);
 
-                return ctx.Contents
+                return await ctx.Contents
                     .AsNoTracking()
                     .Where(predicate)
-                    .Include(c => c.Embeddings);
+                    .Include(c => c.Embeddings)
+                    .ToListAsync();
             }, cancellationToken);
         }
         catch (Exception ex)
@@ -161,7 +162,6 @@ public class ContentRepo(ILogger<ContentRepo> logger, IDbContextFactory<SearchEn
             {
                 await using var ctx = await ctxFactory.CreateDbContextAsync(ct);
                 await ctx.BulkInsertOrUpdateAsync(contentList, blkConfig, cancellationToken: ct);
-                ctx.BulkSaveChanges(blkConfig);
             }, cancellationToken);
             
             logger.LogInformation("Batch update completed. Updated {ContentCount} items", contentList.Count);
