@@ -16,14 +16,31 @@ public class SearchController(ISearchService searchService, ILogger<SearchContro
         [FromQuery] int crpg = 1,
         [FromQuery] string? site = null)
     {
-        var request = new DTOSearchRequest(q, crpg, pgsz);
+        DTOSearchRequest request;
+        IEnumerable<DTOSearchResult> searchResults;
+        
+        try
+        {
+            request = new DTOSearchRequest(q, crpg, pgsz, site);
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning($"Caught Bad request on SearchController {ex.Message}");
+            return BadRequest(ex.Message);
+        }
 
-        var foundResults = await searchService.GetResults(request);
+        try
+        {
+            searchResults = await searchService.GetResults(request);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning($"Caught Failure to build results on SearchController {ex.Message}");
+            return StatusCode(500, "Failed to retrieve search results");
+        }
 
-        logger.LogInformation($"New search query for '{q}', {crpg} Page Size: {pgsz}, site: {site}");
-
-        var resp = Ok(new { foundResults });
-        Console.WriteLine($"Resp: {JsonSerializer.Serialize(resp.Value)}");
+        var resp = Ok(searchResults);
+        logger.LogDebug($"Resp: {JsonSerializer.Serialize(resp.Value)}");
         return resp;
     }
 }
