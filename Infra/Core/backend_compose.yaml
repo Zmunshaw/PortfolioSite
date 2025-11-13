@@ -11,7 +11,7 @@ services:
       - MODELS_PATH=/models
     volumes:
       - ./Data/localai/models:/models:cached
-      - ./Data/localai/data:/usr/share/localai/backends:cached
+      - ./Data/localai/data:/usr/share/localai/backends
     networks:
       - core-be-net
     deploy:

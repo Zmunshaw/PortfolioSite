@@ -2,7 +2,7 @@
 
 services:
   site-backend:
-    image: site-backend
+    image: site-backend:sample
     restart: always
     build:
       context: ../

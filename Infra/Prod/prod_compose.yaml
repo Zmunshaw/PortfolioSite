@@ -1,7 +1,7 @@
 ﻿name: PROD_SiteStack
 services:
   zacharymunshaw-prod:
-    image: site-backend
+    image: site-backend:dev
     restart: always
     build:
       context: ../../
