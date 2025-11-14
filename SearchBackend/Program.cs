@@ -87,6 +87,7 @@ void AddServices(WebApplicationBuilder bldr)
     bldr.Services.AddScoped<ISearchService, SearchService>();
     bldr.Services.AddHostedService<EmbeddingManager>();
     bldr.Services.AddHostedService<CrawlManager>();
+    bldr.Services.AddHostedService<SitemapCrawlManager>();
 }
 
 void AddRepositories(WebApplicationBuilder bldr)

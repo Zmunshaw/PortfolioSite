@@ -215,6 +215,8 @@ public class PageRepo : IPageRepo
                     .Include(p => p.Website)
                     .Include(p => p.Url)
                     .Include(p => p.Outlinks)
+                    .OrderByDescending(p => p.Url != null ? p.Url.Priority : 0.5f)
+                    .ThenBy(p => p.LastCrawled ?? DateTime.MinValue)
                     .Take(batchSize)
                     .ToListAsync(ct);
             }, cancellationToken);

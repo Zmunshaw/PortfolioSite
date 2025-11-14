@@ -27,6 +27,11 @@ func main() {
 		mapRequestHandler(w, req)
 	})
 
+
+	http.HandleFunc("/scrape-sitemap", func(w http.ResponseWriter, req *http.Request) {
+		scrapeSitemapHandler(w, req)
+	})
+
     // Run mode: if not in a Workers environment, start a local HTTP server
     port := os.Getenv("PORT")
     if port == "" {
@@ -113,4 +118,70 @@ func mapRequestHandler(w http.ResponseWriter, req *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(sitemap)
+}
+
+func scrapeSitemapHandler(w http.ResponseWriter, req *http.Request) {
+	var baseURL string
+	var batchSize int = 50 // Default batch size
+	var maxConcurrent int = 5 // Default concurrent sitemap fetches
+
+	if req.Method == http.MethodGet {
+		baseURL = req.URL.Query().Get("url")
+	} else if req.Method == http.MethodPost {
+		var body map[string]interface{}
+		json.NewDecoder(req.Body).Decode(&body)
+		baseURL, _ = body["url"].(string)
+
+		// Allow customization of batch size and concurrency
+		if bs, ok := body["batchSize"].(float64); ok {
+			batchSize = int(bs)
+		}
+		if mc, ok := body["maxConcurrent"].(float64); ok {
+			maxConcurrent = int(mc)
+		}
+	}
+
+	if baseURL == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"error": "url parameter required"})
+		return
+	}
+
+	// Extract all URLs from sitemap
+	urls, err := ExtractAllURLs(baseURL, maxConcurrent)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	fmt.Printf("Found %d URLs in sitemap for %s\n", len(urls), baseURL)
+
+	// Process URLs in batches
+	batches := BatchURLs(urls, batchSize)
+	var allResults []map[string]interface{}
+
+	for i, batch := range batches {
+		fmt.Printf("Processing batch %d/%d (%d URLs)\n", i+1, len(batches), len(batch))
+
+		results, err := ScrapeSites(batch)
+		if err != nil {
+			// Continue processing other batches even if one fails
+			fmt.Printf("Warning: batch %d failed: %v\n", i+1, err)
+			continue
+		}
+
+		allResults = append(allResults, results...)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	response := map[string]interface{}{
+		"url": baseURL,
+		"totalUrls": len(urls),
+		"scrapedUrls": len(allResults),
+		"results": allResults,
+	}
+	json.NewEncoder(w).Encode(response)
 }
