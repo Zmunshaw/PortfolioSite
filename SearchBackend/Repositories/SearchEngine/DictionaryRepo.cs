@@ -5,8 +5,9 @@ using Polly.Registry;
 using SiteBackend.Database;
 using SiteBackend.Models.SearchEngine;
 using SiteBackend.Models.SearchEngine.Index;
+using SiteBackend.Repositories.SearchEngine;
 
-namespace SiteBackend.Repositories.SearchEngine;
+namespace SearchBackend.Repositories.SearchEngine;
 
 /// <summary>
 /// Repository for word dictionary operations with.
