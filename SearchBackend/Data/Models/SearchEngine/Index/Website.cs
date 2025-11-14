@@ -97,6 +97,23 @@ public class Content
     public List<TextEmbedding> Embeddings { get; set; } = new();
 
     public DateTime? LastScraped { get; set; }
+
+    // Enhanced metadata fields
+    [MaxLength(512)] public string? Author { get; set; }
+    public DateTime? PublishedDate { get; set; }
+    public DateTime? ModifiedDate { get; set; }
+    [MaxLength(2048)] public string? CanonicalUrl { get; set; }
+    [MaxLength(10)] public string? Language { get; set; }
+    public int? WordCount { get; set; }
+
+    // Structured data stored as JSON
+    [MaxLength(4096)] public string? HeadersJson { get; set; }  // JSON of h1, h2, h3
+    [MaxLength(4096)] public string? OpenGraphJson { get; set; }  // JSON of OG tags
+    [MaxLength(2048)] public string? TwitterCardJson { get; set; }  // JSON of Twitter Card
+
+    // Link analysis
+    public int? InternalLinkCount { get; set; }
+    public int? ExternalLinkCount { get; set; }
 }
 
 /// <summary>

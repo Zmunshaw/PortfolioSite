@@ -1,22 +1,63 @@
 import json
 import sys
 import stealth_requests
-from extract_data import extract_main_content
+from extract_data import (
+    extract_main_content,
+    extract_metadata,
+    categorize_links,
+    extract_image_data
+)
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from bs4 import BeautifulSoup
 import os
 
 def scrape_url(url):
-    """Scrape a single URL and return the result"""
+    """Scrape a single URL and return comprehensive data"""
     try:
         resp = stealth_requests.get(url)
+        html = resp.text_content()
+        soup = BeautifulSoup(html, 'html.parser')
+
+        # Extract comprehensive metadata
+        metadata = extract_metadata(html, url)
+
+        # Categorize links
+        link_data = categorize_links(resp.links, url)
+
+        # Extract detailed image data
+        image_data = extract_image_data(soup)
+
+        # Build comprehensive response
         data = {
             "url": url,
-            "links": resp.links,
             "title": resp.meta.title,
             "description": resp.meta.description,
-            "content": extract_main_content(resp.text_content()),
-            "images": resp.images,
+            "content": extract_main_content(html),
             "keywords": resp.meta.keywords,
+
+            # Enhanced metadata
+            "author": metadata.get('author'),
+            "published": metadata.get('published'),
+            "modified": metadata.get('modified'),
+            "canonical": metadata.get('canonical'),
+            "language": metadata.get('language'),
+            "wordCount": metadata.get('wordCount', 0),
+
+            # Structured data
+            "headers": metadata.get('headers'),
+            "openGraph": metadata.get('og'),
+            "twitterCard": metadata.get('twitter'),
+
+            # Link analysis
+            "links": resp.links,  # Keep full list for backward compatibility
+            "internalLinks": link_data['internal'],
+            "externalLinks": link_data['external'],
+            "internalLinkCount": link_data['internalCount'],
+            "externalLinkCount": link_data['externalCount'],
+
+            # Enhanced image data
+            "images": resp.images,  # Keep simple list for backward compatibility
+            "imageData": image_data,
         }
         return data
     except Exception as e:
