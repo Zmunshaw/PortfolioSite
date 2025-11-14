@@ -24,7 +24,7 @@ public class SearchRepo : ISearchRepo
     private readonly ILogger<SearchRepo> _logger;
     private readonly ResiliencePipeline _resiliencePipeline;
 
-    // Configuration constants
+    // MARKED: for #30
     private const int DefaultSimilarWordsLimit = 5;
     private const int DefaultSimilarEmbeddingsLimit = 25;
     private const float DefaultMaxDistance = float.MaxValue;
