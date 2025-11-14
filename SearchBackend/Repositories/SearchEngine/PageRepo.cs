@@ -19,7 +19,7 @@ public class PageRepo : IPageRepo
     private readonly ILogger<PageRepo> _logger;
     private readonly ResiliencePipeline _resiliencePipeline;
 
-    // Configuration constants
+    // MARKED: for #30
     private const int DaysSinceLastCrawl = 31;
     private const int HoursSinceLastAttempt = 5;
     private const int MaxCrawlAttempts = 5;

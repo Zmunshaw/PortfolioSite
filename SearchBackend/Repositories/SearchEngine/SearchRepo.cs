@@ -8,7 +8,7 @@ using SiteBackend.Models.SearchEngine.Index;
 using SiteBackend.Repositories.SearchEngine.Interfaces;
 using SiteBackend.Services;
 
-namespace SiteBackend.Repositories.SearchEngine;
+namespace SearchBackend.Repositories.SearchEngine;
 
 public class SearchRepo : ISearchRepo
 {
@@ -28,7 +28,7 @@ public class SearchRepo : ISearchRepo
         await using var ctx = await _ctxFactory.CreateDbContextAsync();
 
         var results = ctx.Pages
-            .Where(p => p.Content.Embeddings.Any(e =>
+            .Where(p => p.Content != null && p.Content.Embeddings.Any(e =>
                 (e.DenseEmbedding != null && e.DenseEmbedding.L2Distance(request.DenseVector) <= request.MaxDistance) ||
                 (e.SparseEmbedding != null &&
                  e.SparseEmbedding.CosineDistance(request.SparseVector) <= request.MaxDistance) ||
