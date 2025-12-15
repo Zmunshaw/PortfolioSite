@@ -10,7 +10,7 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
+              count: all
               capabilities: [gpu]
     environment:
       - HUGGINGFACE_API_KEY=YOUR_TOKEN_HERE
@@ -22,7 +22,7 @@ services:
       - ai-models:/models
       - ai-backends:/backends
     ports:
-      - 8000:8080
+      - 8080:8080
     networks:
       - core-be-net
 
