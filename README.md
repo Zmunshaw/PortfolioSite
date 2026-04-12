@@ -2,7 +2,7 @@
 -----
 
 It is still very much a work in progress but I'm using this as an opportunity to learn more about git and actually make something "in public" instead of deleting it once I'm done with it.
-
+Hangfire, DDD,  SignalR, MediatR, EFCore, Serilog, Polly, Mapster
 -----
 
 ## Backend

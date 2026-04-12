@@ -1,3 +1,0 @@
-stealth-requests
-beautifulsoup4
-lxml

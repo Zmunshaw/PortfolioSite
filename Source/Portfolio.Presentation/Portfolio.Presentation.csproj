@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+    <!-- Exclude frontend files from .NET compilation -->
+    <ItemGroup>
+        <Content Remove="**/*.ts" />
+        <Content Remove="**/*.tsx" />
+        <Content Remove="**/*.css" />
+        <Content Remove="**/*.js" />
+        <Content Remove="**/*.jsx" />
+        <None Include="**/*.ts" />
+        <None Include="**/*.tsx" />
+        <None Include="**/*.css" />
+        <None Include="**/*.js" />
+        <None Include="**/*.jsx" />
+    </ItemGroup>
+
+</Project>
