@@ -37,7 +37,7 @@ public class SearchService : ISearchService
 
         await Task.WhenAll(denseTask, sparseTask);
 
-        return (denseTask.Result, sparseTask.Result);
+        return (await denseTask, await sparseTask);
     }
 
     #region Words

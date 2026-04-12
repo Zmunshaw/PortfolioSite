@@ -35,7 +35,7 @@ public class SpiderController : ControllerBase
     public async Task<IActionResult> Scrape()
     {
         _logger.LogInformation("Received scrape request.....");
-        var pages = _crawlerService.GetEmptyPagesAsync().Result.ToList();
+        var pages = (await _crawlerService.GetEmptyPagesAsync()).ToList();
         _logger.LogDebug($"Got {pages.Count} pages for scraping.");
         // TODO: Should return some result like a count of unique urls or smthn
         return Ok();
@@ -58,7 +58,7 @@ public class SpiderController : ControllerBase
     [HttpGet("map")]
     public async Task<IActionResult> MapRequest()
     {
-        var sitemapTargets = _crawlerService.GetEmptyPagesAsync().Result.ToList();
+        var sitemapTargets = (await _crawlerService.GetEmptyPagesAsync()).ToList();
         _logger.LogDebug($"Got {sitemapTargets.Count} Sitemap Targets for mapping.");
         return Ok(sitemapTargets);
     }
@@ -73,14 +73,14 @@ public class SpiderController : ControllerBase
     {
         _logger.LogInformation("Received new sitemap");
         _logger.LogInformation(newSitemap.Location);
-        
+
         return Ok();
     }
 
     [HttpGet("crawl")]
     public async Task<IActionResult> CrawlRequest()
     {
-        var sitemapTargets = _crawlerService.GetEmptyPagesAsync().Result.ToList();
+        var sitemapTargets = (await _crawlerService.GetEmptyPagesAsync()).ToList();
         _logger.LogDebug($"Got {sitemapTargets.Count} Sitemap Targets for mapping.");
         return Ok(sitemapTargets);
     }

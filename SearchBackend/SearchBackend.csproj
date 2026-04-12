@@ -22,6 +22,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="API\Hubs\" />
+      <Folder Include="Application\" />
+      <Folder Include="Domain\Website\" />
+      <Folder Include="Infrastructure\Database\" />
       <Folder Include="Tests\Benchmarks\" />
       <Folder Include="Tests\Integration Tests\" />
     </ItemGroup>

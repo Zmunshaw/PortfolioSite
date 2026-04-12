@@ -59,6 +59,7 @@ public class WebsiteRepo : IWebsiteRepo
         };
         _logger.LogInformation("Adding website");
         await ctx.Websites.AddAsync(newSite);
+        await ctx.SaveChangesAsync();
     }
 
     public async Task AddWebsiteAsync(Website website)
@@ -66,6 +67,7 @@ public class WebsiteRepo : IWebsiteRepo
         await using var ctx = await _ctxFactory.CreateDbContextAsync();
         _logger.LogInformation("Adding website {website}", website);
         await ctx.Websites.AddAsync(website);
+        await ctx.SaveChangesAsync();
     }
 
     public void UpdateSitemap(Sitemap sitemap)

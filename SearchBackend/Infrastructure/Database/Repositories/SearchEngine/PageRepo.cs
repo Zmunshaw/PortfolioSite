@@ -44,13 +44,13 @@ public class PageRepo : IPageRepo
 
     public async Task<IEnumerable<Page>> GetPagesAsync(Expression<Func<Page, bool>> predicate)
     {
-        var batchCtx = await _ctxFactory.CreateDbContextAsync();
+        await using var batchCtx = await _ctxFactory.CreateDbContextAsync();
         return await batchCtx.Pages.Where(predicate).ToListAsync();
     }
 
     public async Task<IEnumerable<Page>> GetPagesAsync(Expression<Func<Page, bool>> predicate, int take, int skip = 0)
     {
-        var batchCtx = await _ctxFactory.CreateDbContextAsync();
+        await using var batchCtx = await _ctxFactory.CreateDbContextAsync();
         // TODO: convert to DTO for more perf, maybe; Less queries and stuff.
         return await batchCtx.Pages
             .AsNoTracking()

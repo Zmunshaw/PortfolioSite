@@ -23,8 +23,8 @@ public class CrawlerService : ICrawlerService
     public async Task<IEnumerable<DTOCrawlRequest>> GetEmptyPagesAsync(int amountToGet = 100)
     {
         // TODO: Add more robust logic for determining valid crawl candidates.
-        var validPages = _pageRepo.GetPagesAsync(page => page.LastCrawlAttempt == null, amountToGet)
-            .Result.ToList();
+        var validPages = (await _pageRepo.GetPagesAsync(page => page.LastCrawlAttempt == null, amountToGet))
+            .ToList();
 
         foreach (var page in validPages)
             page.LastCrawlAttempt = DateTime.UtcNow;

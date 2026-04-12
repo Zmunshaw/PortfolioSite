@@ -1,0 +1,38 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+
+# IDE
+.idea/
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Environment / secrets
+.env
+*.env
+appsettings.*.json
+!appsettings.Development.json
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Claude Code
+.claude/
+
+# Serena
+.serena/
+
+# NuGet
+*.nupkg
+**/packages/
+
+# User-specific
+*.rsuser
+*.csproj.user

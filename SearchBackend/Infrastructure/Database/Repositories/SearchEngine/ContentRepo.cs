@@ -36,11 +36,11 @@ public class ContentRepo : IContentRepo
     {
         await using var batchCtx = await _ctxFactory.CreateDbContextAsync();
 
-        return batchCtx.Contents
+        return await batchCtx.Contents
             .AsNoTracking()
             .Where(predicate)
             .Include(ct => ct.Embeddings)
-            .ToList();
+            .ToListAsync();
     }
 
     public async Task<IEnumerable<Content>> GetContentsAsync(Expression<Func<Content, bool>> predicate, int take,

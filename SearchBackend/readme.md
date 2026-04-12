@@ -2,6 +2,7 @@
 
 Backend for my [portfolio site](https://zacharymunshaw.dev), public because is demo code, I guess.
 
+Hangfire, DDD,  SignalR, MediatR, EFCore, Serilog, Polly, Mapster
 ------
 ## Features
 - ### .NET EntityFramework
