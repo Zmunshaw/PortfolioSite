@@ -1,6 +1,6 @@
 using Portfolio.Common.Seedwork.DomainEvents;
 
-namespace Portfolio.Domain.Roots.Sitemap.Events;
+namespace Portfolio.Domain.Aggregates.Sitemap.Events;
 
 public sealed record SitemapUrlRemovedEvent(
     Guid SitemapId,

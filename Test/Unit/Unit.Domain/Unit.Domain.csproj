@@ -18,4 +18,10 @@
         <Using Include="Xunit"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Aggregates\BlogPost\" />
+      <Folder Include="Aggregates\Sitemap\" />
+      <Folder Include="Aggregates\Website\" />
+    </ItemGroup>
+
 </Project>

@@ -1,17 +1,17 @@
 using Portfolio.Common.Seedwork.Aggregates;
-using Portfolio.Common.Seedwork.Guards;
+using Portfolio.Domain.Aggregates.Shared;
 
-namespace Portfolio.Domain.Roots.Sitemap.ValueObjects;
+namespace Portfolio.Domain.Aggregates.Sitemap.ValueObjects;
 
 public sealed class AlternateLink : ValueObject
 {
-    public string Hreflang { get; }
-    public SitemapLocation Href { get; }
+    public LanguageCode Hreflang { get; }
+    public Url Href { get; }
 
     public AlternateLink(string hreflang, string href)
     {
-        Hreflang = Guard.AgainstNullOrWhiteSpace(hreflang);
-        Href = new SitemapLocation(href);
+        Hreflang = new LanguageCode(hreflang);
+        Href = new Url(href);
     }
 
     protected override IEnumerable<object?> GetEqualityComponents()

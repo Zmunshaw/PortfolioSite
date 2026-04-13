@@ -1,7 +1,7 @@
 using Portfolio.Common.Seedwork.Aggregates;
 using Portfolio.Common.Seedwork.Guards;
 
-namespace Portfolio.Domain.Roots.Sitemap.ValueObjects;
+namespace Portfolio.Domain.Aggregates.Sitemap.ValueObjects;
 
 public sealed class NewsMedia : ValueObject
 {

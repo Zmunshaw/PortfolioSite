@@ -1,6 +1,6 @@
 using Portfolio.Common.Seedwork.Enums;
 
-namespace Portfolio.Domain.Roots.Sitemap.Enums;
+namespace Portfolio.Domain.Aggregates.Sitemap.Enums;
 
 public sealed class ChangeFrequency : SmartEnum<ChangeFrequency>
 {

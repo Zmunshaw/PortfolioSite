@@ -1,6 +1,6 @@
 using Portfolio.Common.Seedwork.Interfaces;
 
-namespace Portfolio.Domain.Roots.Sitemap;
+namespace Portfolio.Domain.Aggregates.Sitemap;
 
 public interface ISitemapRepo : IRepository<Sitemap>
 {

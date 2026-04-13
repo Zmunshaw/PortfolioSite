@@ -1,16 +1,18 @@
+using Portfolio.Common.Seedwork.Errors;
+
 namespace Portfolio.Common.Seedwork.Results;
 
 public class Result
 {
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;
-    public string? Error { get; }
+    public Error? Error { get; }
 
-    protected Result(bool isSuccess, string? error)
+    protected Result(bool isSuccess, Error? error)
     {
         if (isSuccess && error is not null)
             throw new ArgumentException("Success result cannot have an error.", nameof(error));
-        if (!isSuccess && string.IsNullOrWhiteSpace(error))
+        if (!isSuccess && error is null)
             throw new ArgumentException("Failure result must have an error.", nameof(error));
 
         IsSuccess = isSuccess;
@@ -18,9 +20,9 @@ public class Result
     }
 
     public static Result Success() => new(true, null);
-    public static Result Failure(string error) => new(false, error);
+    public static Result Failure(Error error) => new(false, error);
     public static Result<T> Success<T>(T value) => new(value, true, null);
-    public static Result<T> Failure<T>(string error) => new(default, false, error);
+    public static Result<T> Failure<T>(Error error) => new(default, false, error);
 }
 
 public class Result<T> : Result
@@ -31,7 +33,7 @@ public class Result<T> : Result
         ? _value!
         : throw new InvalidOperationException("Cannot access Value on a failure result.");
 
-    internal Result(T? value, bool isSuccess, string? error)
+    internal Result(T? value, bool isSuccess, Error? error)
         : base(isSuccess, error)
     {
         _value = value;

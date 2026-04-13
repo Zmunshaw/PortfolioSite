@@ -1,23 +1,25 @@
 using Portfolio.Common.Seedwork.Aggregates;
 using Portfolio.Common.Seedwork.Guards;
-using Portfolio.Domain.Roots.Sitemap.Enums;
-using Portfolio.Domain.Roots.Sitemap.ValueObjects;
+using Portfolio.Domain.Aggregates.Shared;
+using Portfolio.Domain.Aggregates.Sitemap.Enums;
+using Portfolio.Domain.Aggregates.Sitemap.ValueObjects;
 
-namespace Portfolio.Domain.Roots.Sitemap;
+namespace Portfolio.Domain.Aggregates.Sitemap;
 
 public class SitemapUrl : Entity<Guid>
 {
-    private readonly List<ImageMedia> _images = [];
+    private readonly List<Url> _images = [];
     private readonly List<VideoMedia> _videos = [];
     private readonly List<NewsMedia> _news = [];
     private readonly List<AlternateLink> _alternateLinks = [];
 
-    public SitemapLocation Location { get; private set; } = null!;
+    public Url Location { get; private set; } = null!;
     public DateTime? LastModified { get; private set; }
     public ChangeFrequency? ChangeFrequency { get; private set; }
     public UrlPriority Priority { get; private set; } = null!;
+    public CrawlState CrawlState { get; private set; } = CrawlState.Initial;
 
-    public IReadOnlyList<ImageMedia> Images => _images.AsReadOnly();
+    public IReadOnlyList<Url> Images => _images.AsReadOnly();
     public IReadOnlyList<VideoMedia> Videos => _videos.AsReadOnly();
     public IReadOnlyList<NewsMedia> News => _news.AsReadOnly();
     public IReadOnlyList<AlternateLink> AlternateLinks => _alternateLinks.AsReadOnly();
@@ -31,20 +33,34 @@ public class SitemapUrl : Entity<Guid>
         float priority = 0.5f)
     {
         Id = Guid.NewGuid();
-        Location = new SitemapLocation(location);
+        Location = new Url(location);
         LastModified = lastModified;
         ChangeFrequency = changeFrequency;
         Priority = new UrlPriority(priority);
     }
 
-    internal void AddImage(ImageMedia image)
+    internal void RecordCrawlAttempt()
+    {
+        CrawlState = CrawlState.WithAttempt(DateTime.UtcNow);
+        SetUpdated();
+    }
+
+    internal void RecordCrawlSuccess()
+    {
+        CrawlState = CrawlState.WithSuccess(DateTime.UtcNow);
+        SetUpdated();
+    }
+
+    public bool IsDue(DateTime asOf) => CrawlState.IsDue(asOf, ChangeFrequency);
+
+    internal void AddImage(Url image)
     {
         Guard.AgainstNull(image);
         _images.Add(image);
         SetUpdated();
     }
 
-    internal void RemoveImage(ImageMedia image)
+    internal void RemoveImage(Url image)
     {
         _images.Remove(image);
         SetUpdated();

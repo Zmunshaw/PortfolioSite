@@ -1,27 +1,28 @@
 using Portfolio.Common.Seedwork.Aggregates;
 using Portfolio.Common.Seedwork.Guards;
+using Portfolio.Domain.Aggregates.Shared;
 
-namespace Portfolio.Domain.Roots.Sitemap.ValueObjects;
+namespace Portfolio.Domain.Aggregates.Sitemap.ValueObjects;
 
 public sealed class VideoMedia : ValueObject
 {
-    public SitemapLocation ThumbnailLocation { get; }
+    public Url ThumbnailLocation { get; }
     public string Title { get; }
     public string Description { get; }
-    public SitemapLocation? ContentLocation { get; }
-    public SitemapLocation? PlayerLocation { get; }
-    public int? Duration { get; }
+    public Url? ContentLocation { get; }
+    public Url? PlayerLocation { get; }
+    public VideoDuration? Duration { get; }
     public DateTime? ExpirationDate { get; }
-    public float? Rating { get; }
+    public VideoRating? Rating { get; }
     public int? ViewCount { get; }
     public DateTime? PublicationDate { get; }
     public bool? FamilyFriendly { get; }
     public bool? RequiresSubscription { get; }
     public string? Uploader { get; }
     public bool? Live { get; }
-    public IReadOnlyList<string> Tags { get; }
-    public VideoRestriction? Restriction { get; }
-    public VideoPlatform? Platform { get; }
+    public TagSet Tags { get; }
+    public AccessPolicy? CountryRestriction { get; }
+    public AccessPolicy? PlatformRestriction { get; }
 
     public VideoMedia(
         string thumbnailLocation,
@@ -29,20 +30,20 @@ public sealed class VideoMedia : ValueObject
         string description,
         string? contentLocation = null,
         string? playerLocation = null,
-        int? duration = null,
+        VideoDuration? duration = null,
         DateTime? expirationDate = null,
-        float? rating = null,
+        VideoRating? rating = null,
         int? viewCount = null,
         DateTime? publicationDate = null,
         bool? familyFriendly = null,
         bool? requiresSubscription = null,
         string? uploader = null,
         bool? live = null,
-        IEnumerable<string>? tags = null,
-        VideoRestriction? restriction = null,
-        VideoPlatform? platform = null)
+        TagSet? tags = null,
+        AccessPolicy? countryRestriction = null,
+        AccessPolicy? platformRestriction = null)
     {
-        ThumbnailLocation = new SitemapLocation(thumbnailLocation);
+        ThumbnailLocation = new Url(thumbnailLocation);
         Title = Guard.AgainstNullOrWhiteSpace(title);
         Description = Guard.AgainstNullOrWhiteSpace(description);
 
@@ -52,34 +53,24 @@ public sealed class VideoMedia : ValueObject
         if (contentLocation is null && playerLocation is null)
             throw new ArgumentException("At least one of contentLocation or playerLocation must be provided.");
 
-        ContentLocation = contentLocation is not null ? new SitemapLocation(contentLocation) : null;
-        PlayerLocation = playerLocation is not null ? new SitemapLocation(playerLocation) : null;
-
-        if (duration.HasValue)
-            Guard.AgainstOutOfRange(duration.Value, 1, 28800);
-        Duration = duration;
-
-        if (rating.HasValue)
-            Guard.AgainstOutOfRange(rating.Value, 0.0f, 5.0f);
-        Rating = rating;
+        ContentLocation = contentLocation is not null ? new Url(contentLocation) : null;
+        PlayerLocation = playerLocation is not null ? new Url(playerLocation) : null;
 
         if (uploader is not null && uploader.Length > 255)
             throw new ArgumentException("Uploader name cannot exceed 255 characters.", nameof(uploader));
 
-        var tagList = tags?.ToList() ?? [];
-        if (tagList.Count > 32)
-            throw new ArgumentException("Video cannot have more than 32 tags.", nameof(tags));
-        Tags = tagList.AsReadOnly();
-
+        Duration = duration;
         ExpirationDate = expirationDate;
+        Rating = rating;
         ViewCount = viewCount;
         PublicationDate = publicationDate;
         FamilyFriendly = familyFriendly;
         RequiresSubscription = requiresSubscription;
         Uploader = uploader;
         Live = live;
-        Restriction = restriction;
-        Platform = platform;
+        Tags = tags ?? TagSet.Empty;
+        CountryRestriction = countryRestriction;
+        PlatformRestriction = platformRestriction;
     }
 
     protected override IEnumerable<object?> GetEqualityComponents()
