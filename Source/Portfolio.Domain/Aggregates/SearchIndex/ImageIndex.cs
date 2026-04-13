@@ -52,11 +52,17 @@ public class ImageIndex : AggregateRoot<Guid>
         return doc;
     }
 
+    public void UpdateEmbeddings(Guid documentId, EmbeddingSet embeddings)
+    {
+        Guard.AgainstNull(embeddings);
+        var doc = FindDocument(documentId);
+        doc.SetEmbeddings(embeddings);
+        SetUpdated();
+    }
+
     public void RemoveImage(Guid documentId)
     {
-        var doc = _documents.FirstOrDefault(d => d.Id == documentId)
-            ?? throw new DomainLayerException(Errors.DocumentNotFound(documentId));
-
+        var doc = FindDocument(documentId);
         _documents.Remove(doc);
         SetUpdated();
     }
@@ -67,4 +73,8 @@ public class ImageIndex : AggregateRoot<Guid>
         _documents.RemoveAll(d => d.PageLocation == loc);
         SetUpdated();
     }
+
+    private ImageDocument FindDocument(Guid documentId)
+        => _documents.FirstOrDefault(d => d.Id == documentId)
+           ?? throw new DomainLayerException(Errors.DocumentNotFound(documentId));
 }

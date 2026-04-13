@@ -1,3 +1,5 @@
+using Portfolio.Application.Services.Interfaces;
+
 namespace Portfolio.Infrastructure.AIClient;
 
 public partial class AiClient : IAiClient

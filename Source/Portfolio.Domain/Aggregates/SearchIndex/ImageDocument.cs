@@ -12,6 +12,7 @@ public class ImageDocument : Entity<Guid>
     public string? AltText { get; private set; }
     public ImageDimensions? Dimensions { get; private set; }
     public IndexState State { get; private set; } = IndexState.Initial;
+    public EmbeddingSet? Embeddings { get; private set; }
 
     private ImageDocument() { }
 
@@ -26,5 +27,12 @@ public class ImageDocument : Entity<Guid>
         AltText = altText;
         Dimensions = dimensions;
         State = State.WithIndexed(DateTime.UtcNow);
+    }
+
+    internal void SetEmbeddings(EmbeddingSet embeddings)
+    {
+        Guard.AgainstNull(embeddings);
+        Embeddings = embeddings;
+        SetUpdated();
     }
 }
