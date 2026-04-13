@@ -15,6 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Controllers\Blog\" />
       <Folder Include="Hubs\" />
     </ItemGroup>
 

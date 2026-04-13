@@ -42,6 +42,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Portfolio.Crawler", "Source
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{D45CCAFB-57DB-48EB-8747-C74A61BCD4FB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Architecture", "Architecture", "{A1B2C3D4-1234-5678-9ABC-DEF012345678}"
+	ProjectSection(SolutionItems) = preProject
+		docs\Architecture\RefactoringGuide.md = docs\Architecture\RefactoringGuide.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -116,5 +121,6 @@ Global
 		{8CD7DF80-9024-4BA6-9506-FA63B3D51B4F} = {0340CB56-006D-48ED-95B9-873E43A8B81B}
 		{9AEA500A-B0FC-4BA8-B68E-3C200D764AB9} = {8CD7DF80-9024-4BA6-9506-FA63B3D51B4F}
 		{BB031F31-A602-4E1F-A2DE-563251A51B51} = {8CD7DF80-9024-4BA6-9506-FA63B3D51B4F}
+		{A1B2C3D4-1234-5678-9ABC-DEF012345678} = {D45CCAFB-57DB-48EB-8747-C74A61BCD4FB}
 	EndGlobalSection
 EndGlobal

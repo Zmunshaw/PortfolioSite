@@ -30,6 +30,15 @@ public class Sitemap : AggregateRoot<Guid>
 
         public static Error ChildNotFound(SitemapId childId) =>
             new("SITEMAP_CHILD_NOT_FOUND", $"Child sitemap '{childId}' not found in this index.");
+
+        public static Error UrlHostMismatch(string urlHost, string sitemapHost) =>
+            new("SITEMAP_URL_HOST_MISMATCH", $"URL host '{urlHost}' does not match sitemap host '{sitemapHost}'.");
+
+        public static Error ImageLimitExceeded(Guid urlId) =>
+            new("SITEMAP_IMAGE_LIMIT_EXCEEDED", $"URL '{urlId}' cannot have more than 1,000 images.");
+
+        public static Error NewsLimitExceeded(Guid urlId) =>
+            new("SITEMAP_NEWS_LIMIT_EXCEEDED", $"URL '{urlId}' cannot have more than one news entry.");
     }
 
     private readonly List<SitemapUrl> _urls = [];
@@ -75,6 +84,10 @@ public class Sitemap : AggregateRoot<Guid>
             throw new DomainLayerException(Errors.UrlLimitExceeded(MaxUrls.Value));
 
         var loc = new Url(location);
+
+        if (!string.Equals(loc.Host, Location.Host, StringComparison.OrdinalIgnoreCase))
+            throw new DomainLayerException(Errors.UrlHostMismatch(loc.Host, Location.Host));
+
         if (_urls.Any(u => u.Location == loc))
             throw new DomainLayerException(Errors.DuplicateUrl(location));
 
@@ -130,7 +143,7 @@ public class Sitemap : AggregateRoot<Guid>
     public void AddImageToUrl(Guid urlId, string imageLocation)
     {
         var url = FindUrl(urlId);
-        url.AddImage(new Url(imageLocation));
+        url.AddImage(new ImageMedia(imageLocation));
         SetUpdated();
     }
 

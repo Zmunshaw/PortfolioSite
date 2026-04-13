@@ -28,15 +28,15 @@ public sealed class CrawlState : ValueObject
     {
         if (LastSuccess is null) return true;
 
-        var interval = changeFrequency?.Name switch
+        var interval = changeFrequency switch
         {
-            nameof(ChangeFrequency.Always)  => TimeSpan.Zero,
-            nameof(ChangeFrequency.Hourly)  => TimeSpan.FromHours(1),
-            nameof(ChangeFrequency.Daily)   => TimeSpan.FromDays(1),
-            nameof(ChangeFrequency.Weekly)  => TimeSpan.FromDays(7),
-            nameof(ChangeFrequency.Monthly) => TimeSpan.FromDays(30),
-            nameof(ChangeFrequency.Yearly)  => TimeSpan.FromDays(365),
-            nameof(ChangeFrequency.Never)   => TimeSpan.MaxValue,
+            _ when changeFrequency == ChangeFrequency.Always  => TimeSpan.Zero,
+            _ when changeFrequency == ChangeFrequency.Hourly  => TimeSpan.FromHours(1),
+            _ when changeFrequency == ChangeFrequency.Daily   => TimeSpan.FromDays(1),
+            _ when changeFrequency == ChangeFrequency.Weekly  => TimeSpan.FromDays(7),
+            _ when changeFrequency == ChangeFrequency.Monthly => TimeSpan.FromDays(30),
+            _ when changeFrequency == ChangeFrequency.Yearly  => TimeSpan.FromDays(365),
+            _ when changeFrequency == ChangeFrequency.Never   => TimeSpan.MaxValue,
             _ => TimeSpan.FromDays(1)
         };
 

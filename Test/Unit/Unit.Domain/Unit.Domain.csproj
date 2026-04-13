@@ -19,8 +19,11 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\Source\Portfolio.Domain\Portfolio.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
       <Folder Include="Aggregates\BlogPost\" />
-      <Folder Include="Aggregates\Sitemap\" />
       <Folder Include="Aggregates\Website\" />
     </ItemGroup>
 

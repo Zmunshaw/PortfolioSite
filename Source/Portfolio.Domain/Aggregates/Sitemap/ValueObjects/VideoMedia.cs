@@ -19,10 +19,11 @@ public sealed class VideoMedia : ValueObject
     public bool? FamilyFriendly { get; }
     public bool? RequiresSubscription { get; }
     public string? Uploader { get; }
+    public Url? UploaderInfo { get; }
     public bool? Live { get; }
     public TagSet Tags { get; }
-    public AccessPolicy? CountryRestriction { get; }
-    public AccessPolicy? PlatformRestriction { get; }
+    public VideoRestriction? Restriction { get; }
+    public VideoPlatform? Platform { get; }
 
     public VideoMedia(
         string thumbnailLocation,
@@ -38,10 +39,11 @@ public sealed class VideoMedia : ValueObject
         bool? familyFriendly = null,
         bool? requiresSubscription = null,
         string? uploader = null,
+        string? uploaderInfo = null,
         bool? live = null,
         TagSet? tags = null,
-        AccessPolicy? countryRestriction = null,
-        AccessPolicy? platformRestriction = null)
+        VideoRestriction? restriction = null,
+        VideoPlatform? platform = null)
     {
         ThumbnailLocation = new Url(thumbnailLocation);
         Title = Guard.AgainstNullOrWhiteSpace(title);
@@ -67,10 +69,11 @@ public sealed class VideoMedia : ValueObject
         FamilyFriendly = familyFriendly;
         RequiresSubscription = requiresSubscription;
         Uploader = uploader;
+        UploaderInfo = uploaderInfo is not null ? new Url(uploaderInfo) : null;
         Live = live;
         Tags = tags ?? TagSet.Empty;
-        CountryRestriction = countryRestriction;
-        PlatformRestriction = platformRestriction;
+        Restriction = restriction;
+        Platform = platform;
     }
 
     protected override IEnumerable<object?> GetEqualityComponents()

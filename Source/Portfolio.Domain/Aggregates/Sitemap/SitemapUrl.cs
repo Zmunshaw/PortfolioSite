@@ -1,5 +1,7 @@
 using Portfolio.Common.Seedwork.Aggregates;
+using Portfolio.Common.Seedwork.Errors;
 using Portfolio.Common.Seedwork.Guards;
+using Portfolio.Domain.Errors;
 using Portfolio.Domain.Aggregates.Shared;
 using Portfolio.Domain.Aggregates.Sitemap.Enums;
 using Portfolio.Domain.Aggregates.Sitemap.ValueObjects;
@@ -8,7 +10,7 @@ namespace Portfolio.Domain.Aggregates.Sitemap;
 
 public class SitemapUrl : Entity<Guid>
 {
-    private readonly List<Url> _images = [];
+    private readonly List<ImageMedia> _images = [];
     private readonly List<VideoMedia> _videos = [];
     private readonly List<NewsMedia> _news = [];
     private readonly List<AlternateLink> _alternateLinks = [];
@@ -19,7 +21,7 @@ public class SitemapUrl : Entity<Guid>
     public UrlPriority Priority { get; private set; } = null!;
     public CrawlState CrawlState { get; private set; } = CrawlState.Initial;
 
-    public IReadOnlyList<Url> Images => _images.AsReadOnly();
+    public IReadOnlyList<ImageMedia> Images => _images.AsReadOnly();
     public IReadOnlyList<VideoMedia> Videos => _videos.AsReadOnly();
     public IReadOnlyList<NewsMedia> News => _news.AsReadOnly();
     public IReadOnlyList<AlternateLink> AlternateLinks => _alternateLinks.AsReadOnly();
@@ -53,14 +55,19 @@ public class SitemapUrl : Entity<Guid>
 
     public bool IsDue(DateTime asOf) => CrawlState.IsDue(asOf, ChangeFrequency);
 
-    internal void AddImage(Url image)
+    internal void AddImage(ImageMedia image)
     {
         Guard.AgainstNull(image);
+
+        if (_images.Count >= 1000)
+            throw new DomainLayerException(
+                new Error("SITEMAP_IMAGE_LIMIT_EXCEEDED", "A URL cannot have more than 1,000 images."));
+
         _images.Add(image);
         SetUpdated();
     }
 
-    internal void RemoveImage(Url image)
+    internal void RemoveImage(ImageMedia image)
     {
         _images.Remove(image);
         SetUpdated();
@@ -82,6 +89,11 @@ public class SitemapUrl : Entity<Guid>
     internal void AddNews(NewsMedia news)
     {
         Guard.AgainstNull(news);
+
+        if (_news.Count >= 1)
+            throw new DomainLayerException(
+                new Error("SITEMAP_NEWS_LIMIT_EXCEEDED", "A URL cannot have more than one news entry."));
+
         _news.Add(news);
         SetUpdated();
     }

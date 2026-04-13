@@ -10,7 +10,9 @@
       <Folder Include="Aggregates\BlogPost\Events\" />
       <Folder Include="Aggregates\Shared\" />
       <Folder Include="Aggregates\Sitemap\Events\" />
-      <Folder Include="Aggregates\Website\" />
+      <Folder Include="Aggregates\SearchIndex\Enums\" />
+      <Folder Include="Aggregates\SearchIndex\Events\" />
+      <Folder Include="Aggregates\SearchIndex\ValueObjects\" />
       <Folder Include="Service\" />
     </ItemGroup>
 
